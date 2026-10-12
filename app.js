@@ -72,13 +72,19 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
   // Dropdown options: open positions from the sheet, else the POSITIONS setting.
   app.get('/api/positions', async (req, res) => {
     let positions = [];
+    // "source" and "error" make setup problems visible when opening this URL directly.
+    const result = { source: sheet ? 'sheet' : 'off (no GOOGLE_SHEET_ID)' };
     try {
       positions = sheet ? await sheet.listPositions() : [];
     } catch (err) {
-      console.warn(`[positions] ${describeError(err)}`);
+      result.error = describeError(err);
+      console.warn(`[positions] ${result.error}`);
     }
-    if (!positions.length) positions = config.positions || [];
-    res.set('Cache-Control', 'no-store').json({ positions, other: OTHER_POSITION });
+    if (!positions.length && (config.positions || []).length) {
+      positions = config.positions;
+      result.source = 'POSITIONS setting';
+    }
+    res.set('Cache-Control', 'no-store').json({ positions, other: OTHER_POSITION, ...result });
   });
 
   app.get('/api/qr-link', (req, res) => res.json({ url: uploadUrl(req) }));

@@ -140,7 +140,8 @@ test('rate limits repeated uploads', async () => {
 
 test('lists dropdown positions with an Other option', async () => {
   const res = await (await fetch(base + '/api/positions')).json();
-  assert.deepEqual(res, { positions: ['Cashier', 'Driver'], other: 'Other' });
+  assert.deepEqual(res.positions, ['Cashier', 'Driver']);
+  assert.equal(res.other, 'Other');
 });
 
 test('"Other" keeps the role the candidate is looking for', () => {
