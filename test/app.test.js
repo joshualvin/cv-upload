@@ -28,6 +28,7 @@ before(async () => {
     RATE_LIMIT_PER_HOUR: '6',
     COMPANY_NAME: 'Acme',
     PUBLIC_URL: 'https://cv.example.com/',
+    POSITIONS: 'Cashier, Driver',
   });
   server = createApp(config, createStorage(config)).listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
@@ -135,4 +136,20 @@ test('rate limits repeated uploads', async () => {
     last = await fetch(base + '/api/upload', { method: 'POST', body: form({}) });
   }
   assert.equal(last.status, 429);
+});
+
+test('lists dropdown positions with an Other option', async () => {
+  const res = await (await fetch(base + '/api/positions')).json();
+  assert.deepEqual(res, { positions: ['Cashier', 'Driver'], other: 'Other' });
+});
+
+test('"Other" keeps the role the candidate is looking for', () => {
+  const { validateFields } = require('../lib/validate');
+  const base = { name: 'A', email: 'a@b.co', consent: 'yes' };
+  const other = validateFields({ ...base, position: 'other', position_other: ' warehouse ' });
+  assert.deepEqual(Object.keys(other.errors), []);
+  assert.equal(other.data.position, 'Other');
+  assert.equal(other.data.otherInterest, 'warehouse');
+  // The extra box is ignored unless "Other" is chosen.
+  assert.equal(validateFields({ ...base, position: 'Cashier', position_other: 'x' }).data.otherInterest, '');
 });

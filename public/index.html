@@ -35,10 +35,17 @@
         <small class="error" data-for="phone"></small>
       </label>
 
-      <label>
-        <span class="label-text">Position you're applying for</span>
+      <label id="position-field">
+        <span class="label-text">Position you're applying for <span class="req" id="position-req" hidden>*</span></span>
+        <!-- Becomes a dropdown when open positions are configured; stays free text otherwise. -->
         <input name="position" maxlength="100">
         <small class="error" data-for="position"></small>
+      </label>
+
+      <label id="other-field" hidden>
+        <span class="label-text">What kind of role are you looking for?</span>
+        <input name="position_other" maxlength="100" placeholder="e.g. admin, warehouse, anything suitable">
+        <small class="error" data-for="position_other"></small>
       </label>
 
       <!-- Honeypot for bots: hidden from people and screen readers -->

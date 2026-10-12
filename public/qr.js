@@ -16,6 +16,15 @@
     })
     .catch(() => {});
 
+  // Suggest the open positions (and "Other") while typing.
+  fetch('/api/positions')
+    .then((r) => r.json())
+    .then(({ positions, other }) => {
+      const list = document.getElementById('position-list');
+      positions.concat(other).forEach((p) => list.appendChild(new Option(p)));
+    })
+    .catch(() => {});
+
   let timer;
   function refresh() {
     const position = input.value.trim();
@@ -23,7 +32,7 @@
     img.src = '/qr.svg' + qs;
     download.href = '/qr.png' + (qs ? qs + '&' : '?') + 'download=1';
     posterPosition.hidden = !position;
-    posterPosition.textContent = position ? 'Position: ' + position : '';
+    posterPosition.textContent = !position ? '' : position.toLowerCase() === 'other' ? 'Open to all opportunities' : 'Position: ' + position;
     history.replaceState(null, '', '/qr' + qs);
     fetch('/api/qr-link' + qs)
       .then((r) => r.json())

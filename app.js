@@ -6,7 +6,7 @@ const multer = require('multer');
 const QRCode = require('qrcode');
 
 const { rateLimit } = require('./lib/rateLimit');
-const { ALLOWED_EXTENSIONS, detectFileType, validateFields, buildFileName } = require('./lib/validate');
+const { OTHER_POSITION, ALLOWED_EXTENSIONS, detectFileType, validateFields, buildFileName } = require('./lib/validate');
 
 // Drive appProperties allow at most 124 bytes per key + value.
 function fitBytes(key, value) {
@@ -67,6 +67,18 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
       allowedExtensions: ALLOWED_EXTENSIONS,
       aiEnabled: Boolean(analyzer),
     });
+  });
+
+  // Dropdown options: open positions from the sheet, else the POSITIONS setting.
+  app.get('/api/positions', async (req, res) => {
+    let positions = [];
+    try {
+      positions = sheet ? await sheet.listPositions() : [];
+    } catch (err) {
+      console.warn(`[positions] ${describeError(err)}`);
+    }
+    if (!positions.length) positions = config.positions || [];
+    res.set('Cache-Control', 'no-store').json({ positions, other: OTHER_POSITION });
   });
 
   app.get('/api/qr-link', (req, res) => res.json({ url: uploadUrl(req) }));
@@ -142,6 +154,7 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
           `Email: ${data.email}`,
           data.phone && `Phone: ${data.phone}`,
           data.position && `Position: ${data.position}`,
+          data.otherInterest && `Interested in: ${data.otherInterest}`,
           `Submitted: ${submittedAt.toISOString()}`,
           `Original file: ${req.file.originalname}`,
         ]

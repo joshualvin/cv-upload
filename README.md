@@ -67,7 +67,18 @@ Sort or filter by any column, for example by match score from highest to lowest.
 3. Put your Anthropic API key in `ANTHROPIC_API_KEY`. Optionally set `TIMEZONE`, for example `Asia/Kuala_Lumpur`.
 4. Restart or redeploy, then open `/healthz`. It should show `"ai": "on (claude-opus-5-5)"` and the sheet. The app creates the **Applicants** and **Positions** tabs automatically.
 
-**Requirements per position:** in the **Positions** tab, put the position name in column A, spelled the same as on the QR code, and its requirements in plain words in column B. For example: `Diploma or higher; 2+ years retail; speaks English and Malay`. Changes apply within a minute, with no redeploy. Positions without requirements are scored against what the role typically needs, and the reason says "(No requirements set)".
+**Position dropdown and requirements:** the **Positions** tab controls both the form's dropdown and the AI scoring:
+
+| A: Position | B: Requirements | C: Open (yes/no) |
+| --- | --- | --- |
+| Cashier | SPM; 1+ year cash handling; speaks English | yes |
+| Driver | Class D licence; knows the local area | no |
+
+Open positions appear in the form's dropdown, followed by **Other / open to other opportunities**. Choosing Other shows a "What kind of role are you looking for?" box. Its answer goes in the sheet's **Other role interest** column, and the AI suggests roles that suit the candidate instead of giving a score. Set column C to `no` to take a position off the form while keeping its requirements; a blank C counts as open. The starter row whose requirements begin with `Example:` is ignored, so edit or delete it.
+
+Without a sheet, set `POSITIONS=Cashier, Driver` to fill the dropdown. With neither, the field stays free text. A QR code made for a position that isn't listed still works: that position is pre-selected.
+
+In column B, write the requirements in plain words. For example: `Diploma or higher; 2+ years retail; speaks English and Malay`. Changes apply within a minute, with no redeploy. Positions without requirements are scored against what the role typically needs, and the reason says "(No requirements set)".
 
 **Notes:**
 - **Cost:** with Claude Opus 5.5, expect roughly $0.05–0.06 per CV. Set `AI_MODEL=claude-sonnet-5-5` or `claude-haiku-5-5` to pay less.
@@ -90,6 +101,7 @@ Sort or filter by any column, for example by match score from highest to lowest.
 | `ANTHROPIC_API_KEY` | – | Turns on AI review of each CV |
 | `AI_MODEL` | `claude-opus-5-5` | Claude model used for the review |
 | `GOOGLE_SHEET_ID` | – | Sheet that receives one row per applicant |
+| `POSITIONS` | – | Dropdown options when there's no Positions tab, comma-separated |
 | `TIMEZONE` | `UTC` | Time zone of the "Submitted" column |
 | `PORT` | `3000` | HTTP port |
 

@@ -179,3 +179,28 @@ test('AI failure still records the applicant', async () => {
   assert.equal(rows.length, 1);
   assert.match(rows[0][HEADERS.indexOf('AI status')], /AI failed: 401 invalid x-api-key/);
 });
+
+test('reads open positions and skips the example row', () => {
+  const { parsePositions } = require('../lib/sheet');
+  const list = parsePositions([
+    ['Sales Associate', 'Example: Diploma or higher', 'yes'],
+    ['Cashier', 'SPM; cash handling', ''],
+    ['Driver', 'Class D licence', 'no'],
+    ['  Admin Clerk ', '', 'Yes'],
+    ['', 'orphan requirement'],
+  ]);
+  assert.deepEqual(list, [
+    { name: 'Cashier', requirements: 'SPM; cash handling', open: true },
+    { name: 'Driver', requirements: 'Class D licence', open: false },
+    { name: 'Admin Clerk', requirements: '', open: true },
+  ]);
+});
+
+test('"Other" asks the AI for role suggestions instead of a score', async () => {
+  const client = fakeClient();
+  await createAnalyzer(config, client).analyze({ buffer: PDF, ext: 'pdf', position: 'Other', otherInterest: 'warehouse' });
+  const task = client.calls[0].messages[0].content[1].text;
+  assert.match(task, /open to other opportunities/);
+  assert.match(task, /"warehouse"/);
+  assert.match(task, /match_score to null/);
+});

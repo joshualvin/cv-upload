@@ -13,7 +13,8 @@
     <p class="muted">Print this page or download the QR image. Candidates scan it to open the CV upload form.</p>
     <label>
       <span class="label-text">Position (optional): pre-fills the form and can file CVs into a subfolder</span>
-      <input id="position" maxlength="100" placeholder="e.g. Sales Associate">
+      <input id="position" maxlength="100" placeholder="e.g. Sales Associate" list="position-list" autocomplete="off">
+      <datalist id="position-list"></datalist>
     </label>
     <div class="row">
       <button type="button" id="print">Print poster</button>
