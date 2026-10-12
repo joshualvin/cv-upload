@@ -15,6 +15,24 @@ function fitBytes(key, value) {
   return v;
 }
 
+// Turn Google API errors into a short, actionable message.
+function describeError(err) {
+  const google = err.response && err.response.data && err.response.data.error;
+  const detail = (google && (google.message || google.error_description || google)) || err.message;
+  const text = typeof detail === 'string' ? detail : JSON.stringify(detail);
+  if (/invalid_grant/i.test(text)) {
+    return `${text}: the refresh token is invalid or expired. Run "npm run get-token" again with the same client ID/secret.`;
+  }
+  if (/invalid_client|unauthorized_client/i.test(text)) {
+    return `${text}: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are wrong, or the refresh token came from a different client.`;
+  }
+  if (/not been used|is disabled/i.test(text)) return `${text}: enable the Google Drive API in Google Cloud Console.`;
+  if (/File not found/i.test(text)) {
+    return `${text}: check DRIVE_FOLDER_ID, and that the signed-in Google account can access that folder.`;
+  }
+  return text;
+}
+
 function createApp(config, storage) {
   const app = express();
   app.disable('x-powered-by');
@@ -72,9 +90,15 @@ function createApp(config, storage) {
     }
   });
 
-  app.get('/healthz', (req, res) => {
+  // Checks the storage connection for real, so setup problems show up here
+  // instead of only as a failed upload.
+  app.get('/healthz', async (req, res) => {
     if (storage.error) return res.status(503).json({ ok: false, error: storage.error });
-    res.json({ ok: true, storage: storage.mode });
+    try {
+      res.json({ ok: true, storage: await storage.check() });
+    } catch (err) {
+      res.status(503).json({ ok: false, storage: storage.mode, error: describeError(err) });
+    }
   });
 
   const upload = multer({
@@ -145,7 +169,7 @@ function createApp(config, storage) {
           : 'The upload could not be processed. Please try again.';
       return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: message });
     }
-    console.error('[error]', err);
+    console.error('[error]', describeError(err));
     res.status(500).json({ error: 'Sorry, something went wrong saving your CV. Please try again in a moment.' });
   });
 
