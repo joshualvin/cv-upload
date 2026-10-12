@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CV upload QR code</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/qr.js" defer></script>
+</head>
+<body class="qr-page">
+  <section class="controls no-print">
+    <h1>QR code poster</h1>
+    <p class="muted">Print this page or download the QR image. Candidates scan it to open the CV upload form.</p>
+    <label>
+      <span class="label-text">Position (optional): pre-fills the form and can file CVs into a subfolder</span>
+      <input id="position" maxlength="100" placeholder="e.g. Sales Associate">
+    </label>
+    <div class="row">
+      <button type="button" id="print">Print poster</button>
+      <a class="button secondary" id="download" href="/qr.png?download=1">Download PNG</a>
+    </div>
+  </section>
+
+  <article class="poster">
+    <p class="eyebrow" id="company">We're hiring</p>
+    <h2>Scan to submit your CV</h2>
+    <p class="muted" id="poster-position" hidden></p>
+    <img id="qr" src="/qr.svg" alt="QR code linking to the CV upload form" width="320" height="320">
+    <p class="steps">1. Open your phone camera &nbsp; 2. Scan the code &nbsp; 3. Upload your CV</p>
+    <p class="url" id="url"></p>
+  </article>
+</body>
+</html>

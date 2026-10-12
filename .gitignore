@@ -1,0 +1,5 @@
+node_modules/
+uploads/
+.env
+*.key.json
+service-account*.json

@@ -1,0 +1,7 @@
+node_modules
+uploads
+.env
+.git
+test
+*.key.json
+service-account*.json

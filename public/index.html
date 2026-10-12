@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1f4fd8">
+  <title>Submit your CV</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/upload.js" defer></script>
+</head>
+<body>
+  <main class="card">
+    <header>
+      <p class="eyebrow" id="company">Careers</p>
+      <h1>Submit your CV</h1>
+      <p class="muted" id="position-banner" hidden>Applying for <strong id="position-label"></strong></p>
+    </header>
+
+    <form id="cv-form" novalidate>
+      <label>
+        <span class="label-text">Full name <span class="req">*</span></span>
+        <input name="name" autocomplete="name" maxlength="100" required>
+        <small class="error" data-for="name"></small>
+      </label>
+
+      <label>
+        <span class="label-text">Email <span class="req">*</span></span>
+        <input name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required>
+        <small class="error" data-for="email"></small>
+      </label>
+
+      <label>
+        <span class="label-text">Phone</span>
+        <input name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="30">
+        <small class="error" data-for="phone"></small>
+      </label>
+
+      <label>
+        <span class="label-text">Position you're applying for</span>
+        <input name="position" maxlength="100">
+        <small class="error" data-for="position"></small>
+      </label>
+
+      <!-- Honeypot for bots: hidden from people and screen readers -->
+      <div class="hp" aria-hidden="true">
+        <label>Website <input name="website" tabindex="-1" autocomplete="off"></label>
+      </div>
+
+      <div class="file-field">
+        <span class="label-text">CV / Résumé <span class="req">*</span></span>
+        <label class="dropzone" id="dropzone">
+          <input name="cv" id="cv" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+          <span id="file-name">Tap to choose a file</span>
+          <small class="muted" id="file-hint">PDF, DOC or DOCX</small>
+        </label>
+        <small class="error" data-for="cv"></small>
+      </div>
+
+      <label class="check">
+        <input type="checkbox" name="consent" required>
+        <span id="consent-text">I agree that my CV and contact details may be stored and used for recruitment purposes.</span>
+      </label>
+      <small class="error" data-for="consent"></small>
+
+      <div class="progress" id="progress" hidden><div class="bar" id="bar"></div></div>
+      <p class="error form-error" id="form-error" role="alert"></p>
+
+      <button type="submit" id="submit">Upload CV</button>
+    </form>
+
+    <section id="success" hidden>
+      <div class="tick" aria-hidden="true">✓</div>
+      <h2>Thank you!</h2>
+      <p>Your CV has been received. We'll be in touch if your profile matches an opening.</p>
+      <button type="button" class="secondary" id="again">Submit another CV</button>
+    </section>
+  </main>
+</body>
+</html>
