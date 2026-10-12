@@ -21,7 +21,7 @@ To test from your phone, both devices must be on the same Wi-Fi. Set `PUBLIC_URL
 
 ## Connecting Google Drive
 
-1. Copy the config template: `cp .env.example .env`.
+1. In the `cv-upload` folder, install the dependencies: `npm install`. Then copy the config template: `cp .env.example .env`.
 2. Create a folder in Google Drive for the CVs and open it. Copy the ID at the end of the URL (`https://drive.google.com/drive/folders/THIS_PART`) into `DRIVE_FOLDER_ID`.
 3. In [Google Cloud Console](https://console.cloud.google.com/), create a project (or choose an existing one). Then go to **APIs & Services → Library → Google Drive API → Enable**.
 4. Choose one way to sign in:
