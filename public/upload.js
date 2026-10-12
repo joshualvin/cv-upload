@@ -30,7 +30,8 @@
       allowed = cfg.allowedExtensions;
       document.getElementById('company').textContent = cfg.companyName + ' · Careers';
       document.getElementById('consent-text').textContent =
-        'I agree that ' + cfg.companyName + ' may store my CV and contact details for recruitment purposes.';
+        'I agree that ' + cfg.companyName + ' may store my CV and contact details for recruitment purposes' +
+        (cfg.aiEnabled ? ', and may use AI to help review my CV. A person makes all hiring decisions.' : '.');
       fileHint.textContent = allowed.join(', ').toUpperCase() + ' · max ' + cfg.maxFileMb + ' MB';
       document.title = 'Submit your CV · ' + cfg.companyName;
     })

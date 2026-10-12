@@ -33,7 +33,7 @@ function describeError(err) {
   return text;
 }
 
-function createApp(config, storage) {
+function createApp(config, storage, { analyzer = null, sheet = null, processor = null } = {}) {
   const app = express();
   app.disable('x-powered-by');
   if (config.trustProxy) app.set('trust proxy', 1);
@@ -65,6 +65,7 @@ function createApp(config, storage) {
       companyName: config.companyName,
       maxFileMb: config.maxFileMb,
       allowedExtensions: ALLOWED_EXTENSIONS,
+      aiEnabled: Boolean(analyzer),
     });
   });
 
@@ -94,11 +95,21 @@ function createApp(config, storage) {
   // instead of only as a failed upload.
   app.get('/healthz', async (req, res) => {
     if (storage.error) return res.status(503).json({ ok: false, error: storage.error });
+    const report = { ok: true, ai: analyzer ? `on (${analyzer.model})` : 'off (no ANTHROPIC_API_KEY)' };
     try {
-      res.json({ ok: true, storage: await storage.check() });
+      report.storage = await storage.check();
     } catch (err) {
-      res.status(503).json({ ok: false, storage: storage.mode, error: describeError(err) });
+      Object.assign(report, { ok: false, storage: storage.mode, error: describeError(err) });
     }
+    if (!sheet) report.sheet = 'off (no GOOGLE_SHEET_ID)';
+    else {
+      try {
+        report.sheet = await sheet.check();
+      } catch (err) {
+        Object.assign(report, { ok: false, sheet: 'error', sheetError: describeError(err) });
+      }
+    }
+    res.status(report.ok ? 200 : 503).json(report);
   });
 
   const upload = multer({
@@ -154,6 +165,11 @@ function createApp(config, storage) {
         });
         console.log(`[upload] ${fileName} -> ${saved.id}`);
         res.json({ ok: true, fileName });
+
+        // AI review + spreadsheet row happen after the candidate has their answer.
+        if (processor) {
+          processor.enqueue({ buffer: req.file.buffer, ext: type.ext, fileName, submittedAt, data, cvLink: saved.link });
+        }
       } catch (err) {
         next(err);
       }
