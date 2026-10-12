@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { createApp } = require('../server');
+const { createApp } = require('../app');
 const { loadConfig } = require('../lib/config');
 const { createStorage } = require('../lib/storage');
 const { buildFileName, slug, detectFileType } = require('../lib/validate');
