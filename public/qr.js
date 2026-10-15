@@ -12,7 +12,7 @@
   fetch('/api/config')
     .then((r) => r.json())
     .then((cfg) => {
-      document.getElementById('company').textContent = cfg.companyName + ' is hiring';
+      document.getElementById('company').textContent = cfg.companyName + ' sedang merekrut';
     })
     .catch(() => {});
 
@@ -32,7 +32,7 @@
     img.src = '/qr.svg' + qs;
     download.href = '/qr.png' + (qs ? qs + '&' : '?') + 'download=1';
     posterPosition.hidden = !position;
-    posterPosition.textContent = !position ? '' : position.toLowerCase() === 'other' ? 'Open to all opportunities' : 'Position: ' + position;
+    posterPosition.textContent = !position ? '' : position.toLowerCase() === 'other' ? 'Terbuka untuk semua posisi' : 'Posisi: ' + position;
     history.replaceState(null, '', '/qr' + qs);
     fetch('/api/qr-link' + qs)
       .then((r) => r.json())

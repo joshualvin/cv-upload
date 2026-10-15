@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CV upload QR code</title>
+  <title>Kode QR lamaran</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
@@ -12,25 +12,25 @@
 </head>
 <body class="qr-page">
   <section class="controls no-print">
-    <h1>QR code poster</h1>
-    <p class="muted">Print this page or download the QR image. Candidates scan it to open the CV upload form.</p>
+    <h1>Poster kode QR</h1>
+    <p class="muted">Cetak halaman ini atau unduh gambar QR. Pelamar memindainya untuk membuka formulir kirim CV.</p>
     <label>
-      <span class="label-text">Position (optional): pre-fills the form and can file CVs into a subfolder</span>
-      <input id="position" maxlength="100" placeholder="e.g. Sales Associate" list="position-list" autocomplete="off">
+      <span class="label-text">Posisi (opsional): langsung terisi di formulir dan CV bisa disimpan di subfolder per posisi</span>
+      <input id="position" maxlength="100" placeholder="misalnya Sales Associate" list="position-list" autocomplete="off">
       <datalist id="position-list"></datalist>
     </label>
     <div class="row">
-      <button type="button" id="print">Print poster</button>
-      <a class="button secondary" id="download" href="/qr.png?download=1">Download PNG</a>
+      <button type="button" id="print">Cetak poster</button>
+      <a class="button secondary" id="download" href="/qr.png?download=1">Unduh PNG</a>
     </div>
   </section>
 
   <article class="poster">
-    <p class="eyebrow" id="company">We're hiring</p>
-    <h2>Scan to submit your CV</h2>
+    <p class="eyebrow" id="company">Kami sedang merekrut</p>
+    <h2>Pindai untuk mengirim CV Anda</h2>
     <p class="muted" id="poster-position" hidden></p>
-    <img id="qr" src="/qr.svg" alt="QR code linking to the CV upload form" width="320" height="320">
-    <p class="steps">1. Open your phone camera &nbsp; 2. Scan the code &nbsp; 3. Upload your CV</p>
+    <img id="qr" src="/qr.svg" alt="Kode QR menuju formulir kirim CV" width="320" height="320">
+    <p class="steps">1. Buka kamera ponsel &nbsp; 2. Pindai kode &nbsp; 3. Kirim CV Anda</p>
     <p class="url" id="url"></p>
   </article>
 </body>

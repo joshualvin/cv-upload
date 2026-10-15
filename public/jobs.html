@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#F6F6F4">
-  <title>Careers</title>
-  <meta name="description" content="See our current job openings and apply online.">
+  <title>Karier</title>
+  <meta name="description" content="Lihat lowongan kerja kami dan lamar secara online.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
@@ -18,37 +18,37 @@
     <a class="brand" href="/">
       <span class="mark" id="brand-mark" aria-hidden="true"></span>
       <span class="brand-text">
-        <strong data-company>Careers</strong>
-        <small class="mono">Careers</small>
+        <strong data-company>Karier</strong>
+        <small class="mono">Karier</small>
       </span>
     </a>
-    <a class="button dark" id="site-link" hidden><span class="wide-only">Visit website</span><span class="narrow-only">Website</span> <span aria-hidden="true">→</span></a>
+    <a class="button dark" id="site-link" hidden><span class="wide-only">Kunjungi situs</span><span class="narrow-only">Situs</span> <span aria-hidden="true">→</span></a>
   </header>
   <main class="board">
     <section class="hero">
-      <p class="kicker mono"><span class="dot" aria-hidden="true"></span>We're hiring</p>
-      <h1>Build your career <span class="accent">with us.</span></h1>
-      <p>Browse our current openings and apply in a couple of minutes. All you need is your CV.</p>
-      <a class="button" href="#openings">See open positions <span aria-hidden="true">→</span></a>
+      <p class="kicker mono"><span class="dot" aria-hidden="true"></span>Kami sedang merekrut</p>
+      <h1>Bangun karier Anda <span class="accent">bersama kami.</span></h1>
+      <p>Lihat lowongan yang tersedia dan lamar hanya dalam beberapa menit. Cukup siapkan CV Anda.</p>
+      <a class="button" href="#openings">Lihat lowongan <span aria-hidden="true">→</span></a>
     </section>
 
     <div class="toolbar" id="openings">
       <label class="search">
-        <span class="sr-only">Search openings</span>
-        <input id="search" type="search" placeholder="Search by job title or location" autocomplete="off">
+        <span class="sr-only">Cari lowongan</span>
+        <input id="search" type="search" placeholder="Cari posisi atau lokasi" autocomplete="off">
       </label>
-      <div class="chips" id="filters" role="group" aria-label="Filter by department"></div>
+      <div class="chips" id="filters" role="group" aria-label="Saring berdasarkan departemen"></div>
     </div>
 
-    <p class="muted count" id="count" aria-live="polite">Loading openings…</p>
+    <p class="muted count" id="count" aria-live="polite">Memuat lowongan…</p>
     <ul class="jobs" id="jobs"></ul>
 
-    <p class="empty" id="empty" hidden>No openings match your search.</p>
+    <p class="empty" id="empty" hidden>Tidak ada lowongan yang sesuai dengan pencarian Anda.</p>
 
     <section class="general">
-      <h2>Don't see the right role?</h2>
-      <p class="muted">Send us your CV anyway. We'll keep it on file and contact you when a suitable position opens.</p>
-      <a class="button dark" href="/apply?position=Other">Send a general application <span aria-hidden="true">→</span></a>
+      <h2>Belum menemukan posisi yang cocok?</h2>
+      <p class="muted">Kirimkan CV Anda. Kami akan menyimpannya dan menghubungi Anda saat ada posisi yang sesuai.</p>
+      <a class="button dark" href="/apply?position=Other">Kirim lamaran umum <span aria-hidden="true">→</span></a>
     </section>
   </main>
   <footer class="site-footer mono">© <span id="year"></span> <span data-company></span></footer>
