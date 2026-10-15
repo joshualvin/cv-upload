@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#F6F6F4">
-  <title>Submit your CV</title>
+  <title>Kirim CV Anda</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
@@ -17,23 +17,23 @@
     <a class="brand" href="/">
       <span class="mark" id="brand-mark" aria-hidden="true"></span>
       <span class="brand-text">
-        <strong data-company>Careers</strong>
-        <small class="mono">Careers</small>
+        <strong data-company>Karier</strong>
+        <small class="mono">Karier</small>
       </span>
     </a>
-    <a class="button dark" id="site-link" hidden><span class="wide-only">Visit website</span><span class="narrow-only">Website</span> <span aria-hidden="true">→</span></a>
+    <a class="button dark" id="site-link" hidden><span class="wide-only">Kunjungi situs</span><span class="narrow-only">Situs</span> <span aria-hidden="true">→</span></a>
   </header>
   <main class="card">
-    <a class="back" href="/">← All openings</a>
+    <a class="back" href="/">← Semua lowongan</a>
     <header>
-      <p class="eyebrow" id="company">Careers</p>
-      <h1>Submit your CV</h1>
-      <p class="muted" id="position-banner" hidden>Applying for <strong id="position-label"></strong></p>
+      <p class="eyebrow" id="company">Karier</p>
+      <h1>Kirim CV Anda</h1>
+      <p class="muted" id="position-banner" hidden>Melamar untuk <strong id="position-label"></strong></p>
     </header>
 
     <form id="cv-form" novalidate>
       <label>
-        <span class="label-text">Full name <span class="req">*</span></span>
+        <span class="label-text">Nama lengkap <span class="req">*</span></span>
         <input name="name" autocomplete="name" maxlength="100" required>
         <small class="error" data-for="name"></small>
       </label>
@@ -45,21 +45,21 @@
       </label>
 
       <label>
-        <span class="label-text">Phone</span>
+        <span class="label-text">Nomor telepon</span>
         <input name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="30">
         <small class="error" data-for="phone"></small>
       </label>
 
       <label id="position-field">
-        <span class="label-text">Position you're applying for <span class="req" id="position-req" hidden>*</span></span>
+        <span class="label-text">Posisi yang dilamar <span class="req" id="position-req" hidden>*</span></span>
         <!-- Becomes a dropdown when open positions are configured; stays free text otherwise. -->
         <input name="position" maxlength="100">
         <small class="error" data-for="position"></small>
       </label>
 
       <label id="other-field" hidden>
-        <span class="label-text">What kind of role are you looking for?</span>
-        <input name="position_other" maxlength="100" placeholder="e.g. admin, warehouse, anything suitable">
+        <span class="label-text">Posisi seperti apa yang Anda cari?</span>
+        <input name="position_other" maxlength="100" placeholder="misalnya admin, gudang, apa saja yang sesuai">
         <small class="error" data-for="position_other"></small>
       </label>
 
@@ -69,32 +69,32 @@
       </div>
 
       <div class="file-field">
-        <span class="label-text">CV / Résumé <span class="req">*</span></span>
+        <span class="label-text">CV / Riwayat hidup <span class="req">*</span></span>
         <label class="dropzone" id="dropzone">
           <input name="cv" id="cv" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
-          <span id="file-name">Tap to choose a file</span>
-          <small class="muted" id="file-hint">PDF, DOC or DOCX</small>
+          <span id="file-name">Ketuk untuk memilih file</span>
+          <small class="muted" id="file-hint">PDF, DOC, atau DOCX</small>
         </label>
         <small class="error" data-for="cv"></small>
       </div>
 
       <label class="check">
         <input type="checkbox" name="consent" required>
-        <span id="consent-text">I agree that my CV and contact details may be stored and used for recruitment purposes.</span>
+        <span id="consent-text">Saya setuju CV dan data kontak saya disimpan dan digunakan untuk keperluan rekrutmen.</span>
       </label>
       <small class="error" data-for="consent"></small>
 
       <div class="progress" id="progress" hidden><div class="bar" id="bar"></div></div>
       <p class="error form-error" id="form-error" role="alert"></p>
 
-      <button type="submit" id="submit">Upload CV</button>
+      <button type="submit" id="submit">Kirim CV</button>
     </form>
 
     <section id="success" hidden>
       <div class="tick" aria-hidden="true">✓</div>
-      <h2>Thank you!</h2>
-      <p>Your CV has been received. We'll be in touch if your profile matches an opening.</p>
-      <button type="button" class="secondary" id="again">Submit another CV</button>
+      <h2>Terima kasih!</h2>
+      <p>CV Anda sudah kami terima. Kami akan menghubungi Anda jika profil Anda sesuai dengan lowongan yang tersedia.</p>
+      <button type="button" class="secondary" id="again">Kirim CV lain</button>
     </section>
   </main>
   <footer class="site-footer mono">© <span id="year"></span> <span data-company></span></footer>

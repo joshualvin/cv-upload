@@ -12,7 +12,7 @@
 
   fetch('/api/config')
     .then((r) => r.json())
-    .then((cfg) => (document.title = 'Careers · ' + cfg.companyName))
+    .then((cfg) => (document.title = 'Karier · ' + cfg.companyName))
     .catch(() => {});
 
   function el(tag, className, text) {
@@ -34,7 +34,7 @@
   function postedLabel(date) {
     const d = new Date(date + 'T00:00:00');
     if (Number.isNaN(d.getTime())) return '';
-    return 'Posted ' + d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    return 'Diposting ' + d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   function card(job) {
@@ -52,11 +52,11 @@
 
     const body = el('div', 'job-body');
     if (job.summary) body.appendChild(el('p', '', job.summary));
-    if (job.responsibilities.length) body.appendChild(bulletList("What you'll do", job.responsibilities));
-    if (job.requirements.length) body.appendChild(bulletList("What we're looking for", job.requirements));
+    if (job.responsibilities.length) body.appendChild(bulletList('Tanggung jawab', job.responsibilities));
+    if (job.requirements.length) body.appendChild(bulletList('Kualifikasi', job.requirements));
 
     const footer = el('div', 'job-footer');
-    const apply = el('a', 'button', 'Apply now');
+    const apply = el('a', 'button', 'Lamar sekarang');
     apply.href = '/apply?position=' + encodeURIComponent(job.title);
     footer.appendChild(apply);
     if (job.postedAt) footer.appendChild(el('small', 'muted', postedLabel(job.postedAt)));
@@ -83,7 +83,7 @@
     const departments = [...new Set(jobs.map((j) => j.department).filter(Boolean))].sort();
     filtersEl.replaceChildren();
     if (departments.length < 2) return;
-    filtersEl.appendChild(chip('All', ''));
+    filtersEl.appendChild(chip('Semua', ''));
     departments.forEach((d) => filtersEl.appendChild(chip(d, d)));
   }
 
@@ -96,8 +96,8 @@
     );
     listEl.replaceChildren(...shown.map(card));
     emptyEl.hidden = shown.length > 0 || jobs.length === 0;
-    if (jobs.length === 0) countEl.textContent = "We don't have any open positions right now.";
-    else countEl.textContent = shown.length + (shown.length === 1 ? ' open position' : ' open positions');
+    if (jobs.length === 0) countEl.textContent = 'Saat ini belum ada lowongan yang dibuka.';
+    else countEl.textContent = shown.length + ' lowongan tersedia';
   }
 
   searchEl.addEventListener('input', render);
@@ -117,6 +117,6 @@
       }
     })
     .catch(() => {
-      countEl.textContent = 'Could not load openings. Please refresh the page.';
+      countEl.textContent = 'Lowongan tidak dapat dimuat. Silakan muat ulang halaman.';
     });
 })();

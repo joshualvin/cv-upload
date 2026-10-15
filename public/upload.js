@@ -24,7 +24,7 @@
   if (position) {
     form.elements.position.value = position;
     document.getElementById('position-label').textContent =
-      position.toLowerCase() === OTHER.toLowerCase() ? 'other opportunities' : position;
+      position.toLowerCase() === OTHER.toLowerCase() ? 'peluang lainnya' : position;
     document.getElementById('position-banner').hidden = false;
   }
 
@@ -54,9 +54,9 @@
       const input = form.elements.position;
       dropdown = document.createElement('select');
       dropdown.name = 'position';
-      dropdown.add(new Option('Choose a position', ''));
+      dropdown.add(new Option('Pilih posisi', ''));
       positions.forEach((p) => dropdown.add(new Option(p, p)));
-      dropdown.add(new Option('Other / open to other opportunities', OTHER));
+      dropdown.add(new Option('Lainnya / terbuka untuk peluang lain', OTHER));
       dropdown.addEventListener('change', showOther);
       input.replaceWith(dropdown);
       document.getElementById('position-req').hidden = false;
@@ -69,11 +69,11 @@
     .then((cfg) => {
       maxBytes = cfg.maxFileMb * 1024 * 1024;
       allowed = cfg.allowedExtensions;
-      document.getElementById('company').textContent = cfg.companyName + ' · Careers';
+      document.getElementById('company').textContent = cfg.companyName + ' · Karier';
       document.getElementById('consent-text').textContent =
-        'I agree that ' + cfg.companyName + ' may store my CV and contact details for recruitment purposes.';
-      fileHint.textContent = allowed.join(', ').toUpperCase() + ' · max ' + cfg.maxFileMb + ' MB';
-      document.title = 'Submit your CV · ' + cfg.companyName;
+        'Saya setuju ' + cfg.companyName + ' menyimpan CV dan data kontak saya untuk keperluan rekrutmen.';
+      fileHint.textContent = allowed.join(', ').toUpperCase() + ' · maks ' + cfg.maxFileMb + ' MB';
+      document.title = 'Kirim CV Anda · ' + cfg.companyName;
     })
     .catch(() => {});
 
@@ -91,10 +91,10 @@
 
   function checkFile() {
     const file = fileInput.files[0];
-    if (!file) return 'Please choose your CV file.';
+    if (!file) return 'Silakan pilih file CV Anda.';
     const ext = file.name.split('.').pop().toLowerCase();
-    if (!allowed.includes(ext)) return 'Your CV must be a ' + allowed.join(', ').toUpperCase() + ' file.';
-    if (file.size > maxBytes) return 'Your file is too large. The maximum size is ' + maxBytes / 1024 / 1024 + ' MB.';
+    if (!allowed.includes(ext)) return 'CV harus berupa file ' + allowed.join(', ').toUpperCase() + '.';
+    if (file.size > maxBytes) return 'Ukuran file terlalu besar. Maksimal ' + maxBytes / 1024 / 1024 + ' MB.';
     return '';
   }
 
@@ -106,7 +106,7 @@
 
   fileInput.addEventListener('change', () => {
     const file = fileInput.files[0];
-    fileName.textContent = file ? file.name : 'Tap to choose a file';
+    fileName.textContent = file ? file.name : 'Ketuk untuk memilih file';
     dropzone.classList.toggle('has-file', !!file);
     setError('cv', file ? checkFile() : '');
   });
@@ -130,18 +130,18 @@
     let ok = true;
     const name = form.elements.name.value.trim();
     const email = form.elements.email.value.trim();
-    if (!name) (ok = false), setError('name', 'Please enter your full name.');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) (ok = false), setError('email', 'Please enter a valid email address.');
-    if (dropdown && !dropdown.value) (ok = false), setError('position', 'Please choose a position, or Other.');
+    if (!name) (ok = false), setError('name', 'Silakan isi nama lengkap Anda.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) (ok = false), setError('email', 'Silakan isi alamat email yang valid.');
+    if (dropdown && !dropdown.value) (ok = false), setError('position', 'Silakan pilih posisi, atau Lainnya.');
     const fileErr = checkFile();
     if (fileErr) (ok = false), setError('cv', fileErr);
-    if (!form.elements.consent.checked) (ok = false), setError('consent', 'Please agree to the privacy notice.');
+    if (!form.elements.consent.checked) (ok = false), setError('consent', 'Silakan centang persetujuan di atas.');
     return ok;
   }
 
   function busy(on) {
     submitBtn.disabled = on;
-    submitBtn.textContent = on ? 'Uploading…' : 'Upload CV';
+    submitBtn.textContent = on ? 'Mengirim…' : 'Kirim CV';
     progress.hidden = !on;
     if (!on) bar.style.width = '0';
   }
@@ -177,11 +177,11 @@
         return;
       }
       if (res.errors) Object.keys(res.errors).forEach((k) => setError(k, res.errors[k]));
-      formError.textContent = res.error || 'Upload failed. Please try again.';
+      formError.textContent = res.error || 'Pengiriman gagal. Silakan coba lagi.';
     };
     xhr.onerror = () => {
       busy(false);
-      formError.textContent = 'Network error. Please check your connection and try again.';
+      formError.textContent = 'Koneksi bermasalah. Periksa internet Anda lalu coba lagi.';
     };
     busy(true);
     xhr.send(body);
@@ -192,7 +192,7 @@
     if (dropdown) selectPosition(position);
     else if (position) form.elements.position.value = position;
     showOther();
-    fileName.textContent = 'Tap to choose a file';
+    fileName.textContent = 'Ketuk untuk memilih file';
     dropzone.classList.remove('has-file');
     success.hidden = true;
     form.hidden = false;

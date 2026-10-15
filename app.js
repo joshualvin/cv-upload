@@ -195,12 +195,12 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
 
         const { data, errors } = validateFields(req.body);
         let type = null;
-        if (!req.file) errors.cv = 'Please choose your CV file.';
+        if (!req.file) errors.cv = 'Silakan pilih file CV Anda.';
         else {
           type = detectFileType(req.file.originalname, req.file.buffer);
-          if (!type) errors.cv = `Your CV must be a ${ALLOWED_EXTENSIONS.join(', ').toUpperCase()} file.`;
+          if (!type) errors.cv = `CV harus berupa file ${ALLOWED_EXTENSIONS.join(', ').toUpperCase()}.`;
         }
-        if (Object.keys(errors).length) return res.status(400).json({ error: 'Please check the form.', errors });
+        if (Object.keys(errors).length) return res.status(400).json({ error: 'Mohon periksa kembali formulir Anda.', errors });
 
         const submittedAt = new Date();
         const fileName = buildFileName(data, type.ext, submittedAt);
@@ -249,12 +249,12 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
     if (err instanceof multer.MulterError) {
       const message =
         err.code === 'LIMIT_FILE_SIZE'
-          ? `Your file is too large. The maximum size is ${config.maxFileMb} MB.`
-          : 'The upload could not be processed. Please try again.';
+          ? `Ukuran file terlalu besar. Maksimal ${config.maxFileMb} MB.`
+          : 'File tidak dapat diproses. Silakan coba lagi.';
       return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: message });
     }
     console.error('[error]', describeError(err));
-    res.status(500).json({ error: 'Sorry, something went wrong saving your CV. Please try again in a moment.' });
+    res.status(500).json({ error: 'Maaf, terjadi kesalahan saat menyimpan CV Anda. Silakan coba lagi sebentar lagi.' });
   });
 
   return app;
