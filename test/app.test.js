@@ -85,6 +85,17 @@ test('serves the job board, form, poster and config', async () => {
   assert.equal(cfg.maxFileMb, 1);
 });
 
+test('pages link versioned assets so browsers never reuse a stale stylesheet', async () => {
+  const res = await fetch(base + '/');
+  assert.equal(res.headers.get('cache-control'), 'no-cache');
+  const html = await res.text();
+  assert.match(html, /href="\/style\.css\?v=[0-9a-f]{10}"/);
+  assert.match(html, /src="\/jobs\.js\?v=[0-9a-f]{10}"/);
+  const css = await fetch(base + html.match(/href="(\/style\.css\?v=\w+)"/)[1]);
+  assert.equal(css.status, 200);
+  assert.equal(css.headers.get('cache-control'), 'no-cache');
+});
+
 test('lists open jobs and skips closed or invalid ones', async () => {
   const { jobs } = await (await fetch(base + '/api/jobs')).json();
   assert.equal(jobs.length, 1);

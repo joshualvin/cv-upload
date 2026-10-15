@@ -1,5 +1,7 @@
 'use strict';
 
+const crypto = require('node:crypto');
+const fs = require('node:fs');
 const path = require('node:path');
 const express = require('express');
 const multer = require('multer');
@@ -34,6 +36,21 @@ function describeError(err) {
   return text;
 }
 
+// Load an HTML page and stamp its CSS/JS links with a hash of each file.
+// Some CDNs (e.g. Hostinger's) strip Cache-Control from static files, and
+// Safari then keeps serving an old stylesheet; a new URL per deploy avoids that.
+function loadPage(publicDir, name) {
+  return fs.readFileSync(path.join(publicDir, name), 'utf8').replace(
+    /(href|src)="\/([\w-]+\.(?:css|js))"/g,
+    (match, attr, file) => {
+      const target = path.join(publicDir, file);
+      if (!fs.existsSync(target)) return match;
+      const hash = crypto.createHash('sha1').update(fs.readFileSync(target)).digest('hex').slice(0, 10);
+      return `${attr}="/${file}?v=${hash}"`;
+    }
+  );
+}
+
 function createApp(config, storage, { analyzer = null, sheet = null, processor = null } = {}) {
   const app = express();
   const getJobs = createJobs(config.jobsFile);
@@ -52,17 +69,24 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
   });
 
   const publicDir = path.join(__dirname, 'public');
+  const pages = Object.fromEntries(['jobs.html', 'apply.html', 'qr.html'].map((n) => [n, loadPage(publicDir, n)]));
+  const sendPage = (res, name) => res.type('html').set('Cache-Control', 'no-cache').send(pages[name]);
   app.get('/', (req, res) => {
     // QR codes printed before the job board existed point at /?position=...
     if (req.query.position) {
       const position = String(req.query.position).trim().slice(0, 100);
       return res.redirect(302, `/apply?position=${encodeURIComponent(position)}`);
     }
-    res.sendFile(path.join(publicDir, 'jobs.html'));
+    sendPage(res, 'jobs.html');
   });
-  app.get('/apply', (req, res) => res.sendFile(path.join(publicDir, 'apply.html')));
-  app.get('/qr', (req, res) => res.sendFile(path.join(publicDir, 'qr.html')));
-  app.use(express.static(publicDir, { index: false }));
+  app.get('/apply', (req, res) => sendPage(res, 'apply.html'));
+  app.get('/qr', (req, res) => sendPage(res, 'qr.html'));
+  app.use(
+    express.static(publicDir, {
+      index: false,
+      setHeaders: (res) => res.set('Cache-Control', 'no-cache'),
+    })
+  );
 
   function uploadUrl(req) {
     const base = config.publicUrl || `${req.protocol}://${req.get('host')}`;
