@@ -44,7 +44,7 @@ To test from your phone, both devices must be on the same Wi-Fi. Set `PUBLIC_URL
 
 ## Connecting Google Drive
 
-1. Copy the config template: `cp .env.example .env`.
+1. In the `cv-upload` folder, install the dependencies: `npm install`. Then copy the config template: `cp .env.example .env`.
 2. Create a folder in Google Drive for the CVs and open it. Copy the ID at the end of the URL (`https://drive.google.com/drive/folders/THIS_PART`) into `DRIVE_FOLDER_ID`.
 3. In [Google Cloud Console](https://console.cloud.google.com/), create a project (or choose an existing one). Then go to **APIs & Services → Library → Google Drive API → Enable**.
 4. Choose one way to sign in:
@@ -71,6 +71,44 @@ npm start
 
 On startup the server checks that it can reach the folder, for example: `Storing CVs in Google Drive folder "CVs"`.
 
+## AI review in a Google Sheet (optional)
+
+When it's turned on, every uploaded CV is read by Claude and added to a Google Sheet as one row per applicant. The candidate gets the "thank you" screen right away, and the analysis runs in the background, usually within a minute.
+
+Each row has:
+- the applicant's name, email, phone and position
+- a **match score (0–100)** with a short reason
+- education level and an education rank (0 = none … 6 = doctorate), qualification, field and institution
+- total and relevant years of experience, plus their current or last job title and employer
+- skills, languages, certifications, a short summary, an **Open CV** link and the AI status
+
+Sort or filter by any column, for example by match score from highest to lowest.
+
+**Setup:**
+1. Create an empty Google Sheet with the same Google account that owns the Drive folder. Copy its ID from the URL (`https://docs.google.com/spreadsheets/d/THIS_PART/edit`) into `GOOGLE_SHEET_ID`.
+2. In Google Cloud Console, go to **APIs & Services → Library → Google Sheets API → Enable**. Your existing refresh token already covers Sheets, so you don't need to run `get-token` again.
+3. Put your Anthropic API key in `ANTHROPIC_API_KEY`. Optionally set `TIMEZONE`, for example `Asia/Kuala_Lumpur`.
+4. Restart or redeploy, then open `/healthz`. It should show `"ai": "on (claude-opus-5-5)"` and the sheet. The app creates the **Applicants** and **Positions** tabs automatically.
+
+**Position dropdown and requirements:** the **Positions** tab controls both the form's dropdown and the AI scoring:
+
+| A: Position | B: Requirements | C: Open (yes/no) |
+| --- | --- | --- |
+| Cashier | SPM; 1+ year cash handling; speaks English | yes |
+| Driver | Class D licence; knows the local area | no |
+
+Open positions appear in the form's dropdown, followed by **Other / open to other opportunities**. Choosing Other shows a "What kind of role are you looking for?" box. Its answer goes in the sheet's **Other role interest** column, and the AI suggests roles that suit the candidate instead of giving a score. Set column C to `no` to take a position off the form while keeping its requirements; a blank C counts as open. The starter row whose requirements begin with `Example:` is ignored, so edit or delete it.
+
+Without a sheet, set `POSITIONS=Cashier, Driver` to fill the dropdown. With neither, the field stays free text. A QR code made for a position that isn't listed still works: that position is pre-selected.
+
+In column B, write the requirements in plain words. For example: `Diploma or higher; 2+ years retail; speaks English and Malay`. Changes apply within a minute, with no redeploy. Positions without requirements are scored against what the role typically needs, and the reason says "(No requirements set)".
+
+**Notes:**
+- **Cost:** with Claude Opus 5.5, expect roughly $0.05–0.06 per CV. Set `AI_MODEL=claude-sonnet-5-5` or `claude-haiku-5-5` to pay less.
+- **File types:** PDF and DOCX are analysed. Old `.doc` files are saved but marked for manual review.
+- **Fairness:** the AI is told to use only job-relevant facts. It must ignore age, gender, race, religion, marital status, health and photos, and must ignore instructions written inside a CV. Use the score to sort and shortlist, and have a person make every decision. AI in hiring is regulated in some places, so check your local rules. When AI is on, the consent text tells candidates that AI helps review their CV.
+- **Without an API key:** if only `GOOGLE_SHEET_ID` is set, applicants are still listed in the sheet, just without AI fields.
+
 ## Configuration
 
 | Variable | Default | Description |
@@ -84,6 +122,11 @@ On startup the server checks that it can reach the folder, for example: `Storing
 | `RATE_LIMIT_PER_HOUR` | `10` | Upload attempts per IP address per hour |
 | `TRUST_PROXY` | `false` | Set to `true` behind nginx, Cloud Run, Render and similar, so rate limiting sees each candidate's real IP |
 | `JOBS_FILE` | `data/jobs.json` | JSON file with the job openings |
+| `ANTHROPIC_API_KEY` | – | Turns on AI review of each CV |
+| `AI_MODEL` | `claude-opus-5-5` | Claude model used for the review |
+| `GOOGLE_SHEET_ID` | – | Sheet that receives one row per applicant |
+| `POSITIONS` | – | Dropdown options when there's no Positions tab, comma-separated |
+| `TIMEZONE` | `UTC` | Time zone of the "Submitted" column |
 | `PORT` | `3000` | HTTP port |
 
 See `.env.example` for the Google sign-in variables.

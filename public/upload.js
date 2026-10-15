@@ -15,13 +15,54 @@
   let maxBytes = 10 * 1024 * 1024;
   let allowed = ['pdf', 'doc', 'docx'];
 
+  const OTHER = 'Other';
+  const otherField = document.getElementById('other-field');
+  let dropdown = null;
+
   // Pre-fill the position from the QR link (?position=...)
-  const position = new URLSearchParams(location.search).get('position');
+  const position = (new URLSearchParams(location.search).get('position') || '').slice(0, 100);
   if (position) {
-    form.elements.position.value = position.slice(0, 100);
-    document.getElementById('position-label').textContent = position;
+    form.elements.position.value = position;
+    document.getElementById('position-label').textContent =
+      position.toLowerCase() === OTHER.toLowerCase() ? 'other opportunities' : position;
     document.getElementById('position-banner').hidden = false;
   }
+
+  function showOther() {
+    const isOther = form.elements.position.value === OTHER;
+    otherField.hidden = !isOther;
+    if (!isOther) form.elements.position_other.value = '';
+  }
+
+  function selectPosition(value) {
+    if (!dropdown) return;
+    const match = Array.from(dropdown.options).find((o) => o.value.toLowerCase() === value.toLowerCase());
+    if (match) dropdown.value = match.value;
+    else if (value) {
+      // An older QR code for a position no longer listed: keep it selectable.
+      dropdown.insertBefore(new Option(value, value), dropdown.options[1]);
+      dropdown.value = value;
+    }
+    showOther();
+  }
+
+  // Swap the free-text box for a dropdown when open positions are configured.
+  fetch('/api/positions')
+    .then((r) => r.json())
+    .then(({ positions }) => {
+      if (!positions || !positions.length) return;
+      const input = form.elements.position;
+      dropdown = document.createElement('select');
+      dropdown.name = 'position';
+      dropdown.add(new Option('Choose a position', ''));
+      positions.forEach((p) => dropdown.add(new Option(p, p)));
+      dropdown.add(new Option('Other / open to other opportunities', OTHER));
+      dropdown.addEventListener('change', showOther);
+      input.replaceWith(dropdown);
+      document.getElementById('position-req').hidden = false;
+      selectPosition(position);
+    })
+    .catch(() => {});
 
   fetch('/api/config')
     .then((r) => r.json())
@@ -30,7 +71,8 @@
       allowed = cfg.allowedExtensions;
       document.getElementById('company').textContent = cfg.companyName + ' · Careers';
       document.getElementById('consent-text').textContent =
-        'I agree that ' + cfg.companyName + ' may store my CV and contact details for recruitment purposes.';
+        'I agree that ' + cfg.companyName + ' may store my CV and contact details for recruitment purposes' +
+        (cfg.aiEnabled ? ', and may use AI to help review my CV. A person makes all hiring decisions.' : '.');
       fileHint.textContent = allowed.join(', ').toUpperCase() + ' · max ' + cfg.maxFileMb + ' MB';
       document.title = 'Submit your CV · ' + cfg.companyName;
     })
@@ -91,6 +133,7 @@
     const email = form.elements.email.value.trim();
     if (!name) (ok = false), setError('name', 'Please enter your full name.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) (ok = false), setError('email', 'Please enter a valid email address.');
+    if (dropdown && !dropdown.value) (ok = false), setError('position', 'Please choose a position, or Other.');
     const fileErr = checkFile();
     if (fileErr) (ok = false), setError('cv', fileErr);
     if (!form.elements.consent.checked) (ok = false), setError('consent', 'Please agree to the privacy notice.');
@@ -147,7 +190,9 @@
 
   document.getElementById('again').addEventListener('click', () => {
     form.reset();
-    if (position) form.elements.position.value = position;
+    if (dropdown) selectPosition(position);
+    else if (position) form.elements.position.value = position;
+    showOther();
     fileName.textContent = 'Tap to choose a file';
     dropzone.classList.remove('has-file');
     success.hidden = true;

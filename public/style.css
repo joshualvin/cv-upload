@@ -55,7 +55,8 @@ label, .file-field { display: grid; gap: 6px; font-weight: 500; }
 .label-text { font-weight: 500; }
 .req { color: var(--error); }
 
-input:not([type="checkbox"]):not([type="file"]) {
+input:not([type="checkbox"]):not([type="file"]),
+select {
   width: 100%;
   font: inherit;
   font-size: 16px; /* prevents iOS zoom on focus */
@@ -65,8 +66,8 @@ input:not([type="checkbox"]):not([type="file"]) {
   background: var(--bg);
   color: var(--text);
 }
-input:focus-visible, button:focus-visible, .dropzone:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
-input[aria-invalid="true"] { border-color: var(--error); }
+input:focus-visible, select:focus-visible, button:focus-visible, .dropzone:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--error); }
 
 .dropzone {
   position: relative;
