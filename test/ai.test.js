@@ -140,9 +140,6 @@ test('upload -> AI -> sheet row, end to end in local mode', async () => {
   const base = `http://127.0.0.1:${server.address().port}`;
 
   try {
-    const cfgRes = await (await fetch(base + '/api/config')).json();
-    assert.equal(cfgRes.aiEnabled, true);
-
     const fd = new FormData();
     for (const [k, v] of Object.entries({ name: 'Jane Doe', email: 'jane@example.com', position: 'Sales Associate', consent: 'yes' })) {
       fd.set(k, v);

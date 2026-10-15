@@ -110,7 +110,7 @@ In column B, write the requirements in plain words. For example: `Diploma or hig
 **Notes:**
 - **Cost:** with Claude Opus 5.5, expect roughly $0.05–0.06 per CV. Set `AI_MODEL=claude-sonnet-5-5` or `claude-haiku-5-5` to pay less.
 - **File types:** PDF and DOCX are analysed. Old `.doc` files are saved but marked for manual review.
-- **Fairness:** the AI is told to use only job-relevant facts. It must ignore age, gender, race, religion, marital status, health and photos, and must ignore instructions written inside a CV. Use the score to sort and shortlist, and have a person make every decision. AI in hiring is regulated in some places, so check your local rules. When AI is on, the consent text tells candidates that AI helps review their CV.
+- **Fairness:** the AI is told to use only job-relevant facts. It must ignore age, gender, race, religion, marital status, health and photos, and must ignore instructions written inside a CV. Use the score to sort and shortlist, and have a person make every decision. AI in hiring is regulated in some places, so check your local rules.
 - **Without an API key:** if only `GOOGLE_SHEET_ID` is set, applicants are still listed in the sheet, just without AI fields.
 
 ## Configuration

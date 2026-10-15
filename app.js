@@ -100,7 +100,6 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
       companyName: config.companyName,
       maxFileMb: config.maxFileMb,
       allowedExtensions: ALLOWED_EXTENSIONS,
-      aiEnabled: Boolean(analyzer),
     });
   });
 
