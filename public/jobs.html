@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1f4fd8">
+  <title>Careers</title>
+  <meta name="description" content="See our current job openings and apply online.">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/jobs.js" defer></script>
+</head>
+<body>
+  <main class="board">
+    <header class="hero">
+      <p class="eyebrow" id="company">Careers</p>
+      <h1>Join our team</h1>
+      <p class="muted">Browse our current openings and apply in a couple of minutes. All you need is your CV.</p>
+    </header>
+
+    <div class="toolbar">
+      <label class="search">
+        <span class="sr-only">Search openings</span>
+        <input id="search" type="search" placeholder="Search by job title or location" autocomplete="off">
+      </label>
+      <div class="chips" id="filters" role="group" aria-label="Filter by department"></div>
+    </div>
+
+    <p class="muted count" id="count" aria-live="polite">Loading openings…</p>
+    <ul class="jobs" id="jobs"></ul>
+
+    <p class="empty" id="empty" hidden>No openings match your search.</p>
+
+    <section class="general">
+      <h2>Don't see the right role?</h2>
+      <p class="muted">Send us your CV anyway. We'll keep it on file and contact you when a suitable position opens.</p>
+      <a class="button secondary" href="/apply">Send a general application</a>
+    </section>
+  </main>
+</body>
+</html>

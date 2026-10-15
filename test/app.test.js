@@ -18,9 +18,19 @@ const EXE = Buffer.concat([Buffer.from('MZ'), Buffer.alloc(64)]);
 let server;
 let base;
 let dir;
+let jobsFile;
 
 before(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cv-upload-test-'));
+  jobsFile = path.join(dir, 'jobs.json');
+  fs.writeFileSync(
+    jobsFile,
+    JSON.stringify([
+      { id: 'sales', title: 'Sales Associate', department: 'Sales', requirements: ['Friendly', 42, ''] },
+      { title: 'Closed role', open: false },
+      { department: 'No title' },
+    ])
+  );
   const config = loadConfig({
     DRIVE_MODE: 'local',
     LOCAL_UPLOAD_DIR: dir,
@@ -28,6 +38,7 @@ before(async () => {
     RATE_LIMIT_PER_HOUR: '6',
     COMPANY_NAME: 'Acme',
     PUBLIC_URL: 'https://cv.example.com/',
+    JOBS_FILE: jobsFile,
   });
   server = createApp(config, createStorage(config)).listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
@@ -63,8 +74,8 @@ test('detects file type by content, not just extension', () => {
   assert.equal(detectFileType('cv.docx', PDF), null);
 });
 
-test('serves the form, poster and config', async () => {
-  for (const p of ['/', '/qr', '/style.css', '/upload.js', '/qr.js']) {
+test('serves the job board, form, poster and config', async () => {
+  for (const p of ['/', '/apply', '/qr', '/style.css', '/upload.js', '/qr.js', '/jobs.js']) {
     const res = await fetch(base + p);
     assert.equal(res.status, 200, p);
   }
@@ -73,9 +84,24 @@ test('serves the form, poster and config', async () => {
   assert.equal(cfg.maxFileMb, 1);
 });
 
+test('lists open jobs and skips closed or invalid ones', async () => {
+  const { jobs } = await (await fetch(base + '/api/jobs')).json();
+  assert.equal(jobs.length, 1);
+  assert.equal(jobs[0].title, 'Sales Associate');
+  assert.deepEqual(jobs[0].requirements, ['Friendly', '42']);
+});
+
+test('old position QR links redirect to the form', async () => {
+  const res = await fetch(base + '/?position=Sales%20%26%20Ops', { redirect: 'manual' });
+  assert.equal(res.status, 302);
+  assert.equal(res.headers.get('location'), '/apply?position=Sales%20%26%20Ops');
+});
+
 test('QR code points at the public upload URL', async () => {
   const link = await (await fetch(base + '/api/qr-link?position=Sales%20%26%20Ops')).json();
-  assert.equal(link.url, 'https://cv.example.com/?position=Sales%20%26%20Ops');
+  assert.equal(link.url, 'https://cv.example.com/apply?position=Sales%20%26%20Ops');
+  const general = await (await fetch(base + '/api/qr-link')).json();
+  assert.equal(general.url, 'https://cv.example.com/');
 
   const svg = await fetch(base + '/qr.svg');
   assert.equal(svg.headers.get('content-type'), 'image/svg+xml; charset=utf-8');

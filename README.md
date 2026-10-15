@@ -3,10 +3,33 @@
 A small web app for recruiting events, shop windows and job posters. Job seekers scan a QR code with their phone, fill in a short form and upload their CV. The file lands straight in a Google Drive folder.
 
 - **`/qr`**: a printable poster with the QR code. You can tag it with a position, such as "Sales Associate", and download it as a PNG.
-- **`/`**: the mobile-friendly upload form. It asks for name, email, phone, position, the CV (PDF, DOC or DOCX) and consent.
+- **`/`**: a careers page listing all job openings from `data/jobs.json`, with search and department filters. Each opening has an **Apply now** button that opens the form with the position filled in.
+- **`/apply`**: the mobile-friendly upload form. It asks for name, email, phone, position, the CV (PDF, DOC or DOCX) and consent.
 - **Google Drive**: each CV is saved as `2026-10-12_Jane-Doe_Sales-Associate.pdf`. The candidate's details go in the file description. You can also file CVs into one subfolder per position.
 
 The server checks each file's size, extension and actual content, so a renamed `.exe` is rejected. It also rate-limits uploads per device and uses a hidden honeypot field to block simple spam bots.
+
+## Editing job openings
+
+Openings live in `data/jobs.json`. Each entry looks like this:
+
+```json
+{
+  "id": "sales-associate",
+  "title": "Sales Associate",
+  "department": "Sales",
+  "location": "Jakarta",
+  "type": "Full-time",
+  "summary": "One or two sentences about the role.",
+  "responsibilities": ["...", "..."],
+  "requirements": ["...", "..."],
+  "postedAt": "2026-10-01"
+}
+```
+
+Only `title` is required. To hide an opening without deleting it, add `"open": false`. The server picks up changes on the next page load, so no restart is needed. If you run the app in Docker, mount the file (or set `JOBS_FILE` to a mounted path) so you can edit it without rebuilding the image.
+
+A general QR code (no position) now opens the careers page. A QR code for a specific position goes straight to the form. Old QR codes that point at `/?position=...` are redirected to the form.
 
 ## Quick start (no Google account needed)
 
@@ -15,7 +38,7 @@ npm install
 npm run dev          # DRIVE_MODE=local: CVs are saved to ./uploads
 ```
 
-Open http://localhost:3000/qr for the poster and http://localhost:3000/ for the form.
+Open http://localhost:3000/ for the careers page, http://localhost:3000/apply for the form and http://localhost:3000/qr for the poster.
 
 To test from your phone, both devices must be on the same Wi-Fi. Set `PUBLIC_URL=http://<your-computer-ip>:3000` so the QR code points at your computer.
 
@@ -60,6 +83,7 @@ On startup the server checks that it can reach the folder, for example: `Storing
 | `MAX_FILE_MB` | `10` | Maximum CV size |
 | `RATE_LIMIT_PER_HOUR` | `10` | Upload attempts per IP address per hour |
 | `TRUST_PROXY` | `false` | Set to `true` behind nginx, Cloud Run, Render and similar, so rate limiting sees each candidate's real IP |
+| `JOBS_FILE` | `data/jobs.json` | JSON file with the job openings |
 | `PORT` | `3000` | HTTP port |
 
 See `.env.example` for the Google sign-in variables.

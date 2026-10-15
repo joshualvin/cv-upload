@@ -8,6 +8,7 @@ const multer = require('multer');
 const QRCode = require('qrcode');
 
 const { loadConfig } = require('./lib/config');
+const { createJobs } = require('./lib/jobs');
 const { createStorage } = require('./lib/storage');
 const { rateLimit } = require('./lib/rateLimit');
 const { ALLOWED_EXTENSIONS, detectFileType, validateFields, buildFileName } = require('./lib/validate');
@@ -21,6 +22,7 @@ function fitBytes(key, value) {
 
 function createApp(config, storage) {
   const app = express();
+  const getJobs = createJobs(config.jobsFile);
   app.disable('x-powered-by');
   if (config.trustProxy) app.set('trust proxy', 1);
 
@@ -36,14 +38,23 @@ function createApp(config, storage) {
   });
 
   const publicDir = path.join(__dirname, 'public');
-  app.get('/', (req, res) => res.sendFile(path.join(publicDir, 'index.html')));
+  app.get('/', (req, res) => {
+    // QR codes printed before the job board existed point at /?position=...
+    if (req.query.position) {
+      const position = String(req.query.position).trim().slice(0, 100);
+      return res.redirect(302, `/apply?position=${encodeURIComponent(position)}`);
+    }
+    res.sendFile(path.join(publicDir, 'jobs.html'));
+  });
+  app.get('/apply', (req, res) => res.sendFile(path.join(publicDir, 'apply.html')));
   app.get('/qr', (req, res) => res.sendFile(path.join(publicDir, 'qr.html')));
   app.use(express.static(publicDir, { index: false }));
 
   function uploadUrl(req) {
     const base = config.publicUrl || `${req.protocol}://${req.get('host')}`;
     const position = String(req.query.position || '').trim().slice(0, 100);
-    return position ? `${base}/?position=${encodeURIComponent(position)}` : `${base}/`;
+    // A general QR opens the job board; a position QR goes straight to the form.
+    return position ? `${base}/apply?position=${encodeURIComponent(position)}` : `${base}/`;
   }
 
   app.get('/api/config', (req, res) => {
@@ -52,6 +63,10 @@ function createApp(config, storage) {
       maxFileMb: config.maxFileMb,
       allowedExtensions: ALLOWED_EXTENSIONS,
     });
+  });
+
+  app.get('/api/jobs', (req, res) => {
+    res.set('Cache-Control', 'no-cache').json({ jobs: getJobs() });
   });
 
   app.get('/api/qr-link', (req, res) => res.json({ url: uploadUrl(req) }));
@@ -169,7 +184,8 @@ if (require.main === module) {
 
   createApp(config, storage).listen(config.port, () => {
     const base = config.publicUrl || `http://localhost:${config.port}`;
-    console.log(`CV upload form:   ${base}/`);
+    console.log(`Job openings:     ${base}/`);
+    console.log(`CV upload form:   ${base}/apply`);
     console.log(`Printable QR:     ${base}/qr`);
   });
 }

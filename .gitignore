@@ -3,3 +3,4 @@ uploads/
 .env
 *.key.json
 service-account*.json
+.DS_Store

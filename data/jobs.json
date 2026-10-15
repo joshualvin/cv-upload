@@ -1,0 +1,59 @@
+[
+  {
+    "id": "sales-associate",
+    "title": "Sales Associate",
+    "department": "Sales",
+    "location": "Jakarta",
+    "type": "Full-time",
+    "summary": "Help customers find the right products and keep our showroom running smoothly.",
+    "responsibilities": [
+      "Greet and advise customers in the showroom",
+      "Process orders and follow up on quotations",
+      "Keep product displays and stock tidy"
+    ],
+    "requirements": [
+      "Friendly and confident communicator",
+      "Basic computer skills",
+      "Retail or sales experience is a plus"
+    ],
+    "postedAt": "2026-10-01"
+  },
+  {
+    "id": "warehouse-staff",
+    "title": "Warehouse Staff",
+    "department": "Operations",
+    "location": "Jakarta",
+    "type": "Full-time",
+    "summary": "Receive, store and dispatch goods accurately and safely.",
+    "responsibilities": [
+      "Check incoming deliveries against purchase orders",
+      "Pick and pack customer orders",
+      "Take part in regular stock counts"
+    ],
+    "requirements": [
+      "Careful and well organised",
+      "Able to lift and move goods",
+      "Forklift licence is a plus"
+    ],
+    "postedAt": "2026-10-05"
+  },
+  {
+    "id": "admin-finance",
+    "title": "Finance Administrator",
+    "department": "Finance",
+    "location": "Jakarta",
+    "type": "Full-time",
+    "summary": "Keep invoices, payments and records accurate and up to date.",
+    "responsibilities": [
+      "Prepare and check invoices",
+      "Record payments and reconcile accounts",
+      "Support month-end reporting"
+    ],
+    "requirements": [
+      "Diploma or degree in accounting or finance",
+      "Comfortable with spreadsheets",
+      "Eye for detail"
+    ],
+    "postedAt": "2026-10-10"
+  }
+]
