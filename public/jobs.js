@@ -106,7 +106,10 @@
   searchEl.addEventListener('input', render);
 
   fetch('/api/jobs')
-    .then((r) => r.json())
+    .then((r) => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then((data) => {
       jobs = data.jobs || [];
       renderFilters();

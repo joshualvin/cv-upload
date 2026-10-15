@@ -196,6 +196,53 @@ test('reads open positions and skips the example row', () => {
   ]);
 });
 
+test('turns open Positions rows into careers page listings', () => {
+  const { parseJobs } = require('../lib/sheet');
+  const jobs = parseJobs([
+    ['Sales Associate', 'Example: Diploma or higher', 'yes'],
+    ['Cashier', 'SPM; cash handling', '', 'Retail', 'Jakarta', 'Full-time', 'Run the till.', 'Serve customers\nCount the float'],
+    ['Driver', 'Class D licence', 'no', 'Logistics'],
+    ['Cashier', '', 'yes'],
+  ]);
+  assert.deepEqual(jobs[0], {
+    id: 'cashier',
+    title: 'Cashier',
+    department: 'Retail',
+    location: 'Jakarta',
+    type: 'Full-time',
+    summary: 'Run the till.',
+    responsibilities: ['Serve customers', 'Count the float'],
+    requirements: ['SPM', 'cash handling'],
+    postedAt: '',
+  });
+  assert.deepEqual(jobs.map((j) => j.id), ['cashier', 'cashier-2']);
+});
+
+test('careers page lists jobs from the sheet and reports sheet errors', async () => {
+  const cfg = loadConfig({ DRIVE_MODE: 'local', LOCAL_UPLOAD_DIR: os.tmpdir() });
+  let fail = false;
+  const sheet = {
+    listJobs: async () => {
+      if (fail) throw new Error('Requested entity was not found.');
+      return [{ id: 'cashier', title: 'Cashier' }];
+    },
+  };
+  const server = createApp(cfg, createStorage(cfg), { sheet }).listen(0);
+  await new Promise((resolve) => server.once('listening', resolve));
+  const url = `http://127.0.0.1:${server.address().port}/api/jobs`;
+  try {
+    const ok = await (await fetch(url)).json();
+    assert.equal(ok.source, 'sheet');
+    assert.equal(ok.jobs[0].title, 'Cashier');
+    fail = true;
+    const res = await fetch(url);
+    assert.equal(res.status, 502);
+    assert.match((await res.json()).error, /not found/);
+  } finally {
+    server.close();
+  }
+});
+
 test('"Other" asks the AI for role suggestions instead of a score', async () => {
   const client = fakeClient();
   await createAnalyzer(config, client).analyze({ buffer: PDF, ext: 'pdf', position: 'Other', otherInterest: 'warehouse' });

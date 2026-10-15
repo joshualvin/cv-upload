@@ -98,8 +98,18 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
     res.set('Cache-Control', 'no-store').json({ positions, other: OTHER_POSITION, ...result });
   });
 
-  app.get('/api/jobs', (req, res) => {
-    res.set('Cache-Control', 'no-cache').json({ jobs: getJobs() });
+  // Openings come from the sheet's Positions tab when one is connected,
+  // otherwise from the JSON file (handy for local testing).
+  app.get('/api/jobs', async (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    if (!sheet || !sheet.listJobs) return res.json({ jobs: getJobs(), source: 'file' });
+    try {
+      res.json({ jobs: await sheet.listJobs(), source: 'sheet' });
+    } catch (err) {
+      const error = describeError(err);
+      console.warn(`[jobs] ${error}`);
+      res.status(502).json({ jobs: [], source: 'sheet', error });
+    }
   });
 
   app.get('/api/qr-link', (req, res) => res.json({ url: uploadUrl(req) }));

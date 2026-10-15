@@ -3,7 +3,7 @@
 A small web app for recruiting events, shop windows and job posters. Job seekers scan a QR code with their phone, fill in a short form and upload their CV. The file lands straight in a Google Drive folder.
 
 - **`/qr`**: a printable poster with the QR code. You can tag it with a position, such as "Sales Associate", and download it as a PNG.
-- **`/`**: a careers page listing all job openings from `data/jobs.json`, with search and department filters. Each opening has an **Apply now** button that opens the form with the position filled in.
+- **`/`**: a careers page listing all open positions from the Google Sheet's **Positions** tab (or `data/jobs.json` when no sheet is connected), with search and department filters. Each opening has an **Apply now** button that opens the form with the position filled in.
 - **`/apply`**: the mobile-friendly upload form. It asks for name, email, phone, position, the CV (PDF, DOC or DOCX) and consent.
 - **Google Drive**: each CV is saved as `2026-10-12_Jane-Doe_Sales-Associate.pdf`. The candidate's details go in the file description. You can also file CVs into one subfolder per position.
 
@@ -11,7 +11,9 @@ The server checks each file's size, extension and actual content, so a renamed `
 
 ## Editing job openings
 
-Openings live in `data/jobs.json`. Each entry looks like this:
+When `GOOGLE_SHEET_ID` is set, openings come from the sheet's **Positions** tab. See [AI review in a Google Sheet](#ai-review-in-a-google-sheet-optional) for the columns.
+
+Without a sheet, openings are read from `data/jobs.json`. Each entry looks like this:
 
 ```json
 {
@@ -92,12 +94,14 @@ Sort or filter by any column, for example by match score from highest to lowest.
 
 **Position dropdown and requirements:** the **Positions** tab controls both the form's dropdown and the AI scoring:
 
-| A: Position | B: Requirements | C: Open (yes/no) |
-| --- | --- | --- |
-| Cashier | SPM; 1+ year cash handling; speaks English | yes |
-| Driver | Class D licence; knows the local area | no |
+| A: Position | B: Requirements | C: Open (yes/no) | D: Department | E: Location | F: Employment type | G: Description | H: Responsibilities |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Cashier | SPM; 1+ year cash handling; speaks English | yes | Retail | Jakarta | Full-time | Serve customers at the till. | Handle payments; Count the float |
+| Driver | Class D licence; knows the local area | no | Logistics | Jakarta | Contract | | |
 
 Open positions appear in the form's dropdown, followed by **Other / open to other opportunities**. Choosing Other shows a "What kind of role are you looking for?" box. Its answer goes in the sheet's **Other role interest** column, and the AI suggests roles that suit the candidate instead of giving a score. Set column C to `no` to take a position off the form while keeping its requirements; a blank C counts as open. The starter row whose requirements begin with `Example:` is ignored, so edit or delete it.
+
+**Careers page:** open positions are also listed on the careers page (`/`). Columns D–H are only used there and can be left blank. Column B is shown publicly as "What we're looking for", so write it as something candidates may read. In B and H, separate items with semicolons or new lines. Changes show up within a minute.
 
 Without a sheet, set `POSITIONS=Cashier, Driver` to fill the dropdown. With neither, the field stays free text. A QR code made for a position that isn't listed still works: that position is pre-selected.
 
@@ -121,7 +125,7 @@ In column B, write the requirements in plain words. For example: `Diploma or hig
 | `MAX_FILE_MB` | `10` | Maximum CV size |
 | `RATE_LIMIT_PER_HOUR` | `10` | Upload attempts per IP address per hour |
 | `TRUST_PROXY` | `false` | Set to `true` behind nginx, Cloud Run, Render and similar, so rate limiting sees each candidate's real IP |
-| `JOBS_FILE` | `data/jobs.json` | JSON file with the job openings |
+| `JOBS_FILE` | `data/jobs.json` | Job openings file, used only when no Google Sheet is connected |
 | `ANTHROPIC_API_KEY` | – | Turns on AI review of each CV |
 | `AI_MODEL` | `claude-opus-5-5` | Claude model used for the review |
 | `GOOGLE_SHEET_ID` | – | Sheet that receives one row per applicant |
