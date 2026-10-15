@@ -3,21 +3,36 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#1f4fd8">
+  <meta name="theme-color" content="#F6F6F4">
   <title>Careers</title>
   <meta name="description" content="See our current job openings and apply online.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="/style.css">
+  <script src="/brand.js" defer></script>
   <script src="/jobs.js" defer></script>
 </head>
 <body>
+  <header class="site-header">
+    <a class="brand" href="/">
+      <span class="mark" id="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text">
+        <strong data-company>Careers</strong>
+        <small class="mono">Careers</small>
+      </span>
+    </a>
+    <a class="button dark" id="site-link" hidden><span class="wide-only">Visit website</span><span class="narrow-only">Website</span> <span aria-hidden="true">→</span></a>
+  </header>
   <main class="board">
-    <header class="hero">
-      <p class="eyebrow" id="company">Careers</p>
-      <h1>Join our team</h1>
-      <p class="muted">Browse our current openings and apply in a couple of minutes. All you need is your CV.</p>
-    </header>
+    <section class="hero">
+      <p class="kicker mono"><span class="dot" aria-hidden="true"></span>We're hiring</p>
+      <h1>Build your career <span class="accent">with us.</span></h1>
+      <p>Browse our current openings and apply in a couple of minutes. All you need is your CV.</p>
+      <a class="button" href="#openings">See open positions <span aria-hidden="true">→</span></a>
+    </section>
 
-    <div class="toolbar">
+    <div class="toolbar" id="openings">
       <label class="search">
         <span class="sr-only">Search openings</span>
         <input id="search" type="search" placeholder="Search by job title or location" autocomplete="off">
@@ -33,8 +48,9 @@
     <section class="general">
       <h2>Don't see the right role?</h2>
       <p class="muted">Send us your CV anyway. We'll keep it on file and contact you when a suitable position opens.</p>
-      <a class="button secondary" href="/apply?position=Other">Send a general application</a>
+      <a class="button dark" href="/apply?position=Other">Send a general application <span aria-hidden="true">→</span></a>
     </section>
   </main>
+  <footer class="site-footer mono">© <span id="year"></span> <span data-company></span></footer>
 </body>
 </html>

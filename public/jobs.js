@@ -12,10 +12,7 @@
 
   fetch('/api/config')
     .then((r) => r.json())
-    .then((cfg) => {
-      document.getElementById('company').textContent = cfg.companyName + ' · Careers';
-      document.title = 'Careers · ' + cfg.companyName;
-    })
+    .then((cfg) => (document.title = 'Careers · ' + cfg.companyName))
     .catch(() => {});
 
   function el(tag, className, text) {

@@ -76,12 +76,15 @@ test('detects file type by content, not just extension', () => {
 });
 
 test('serves the job board, form, poster and config', async () => {
-  for (const p of ['/', '/apply', '/qr', '/style.css', '/upload.js', '/qr.js', '/jobs.js']) {
+  for (const p of ['/', '/apply', '/qr', '/style.css', '/upload.js', '/qr.js', '/jobs.js', '/brand.js']) {
     const res = await fetch(base + p);
     assert.equal(res.status, 200, p);
   }
   const cfg = await (await fetch(base + '/api/config')).json();
   assert.equal(cfg.companyName, 'Acme');
+  assert.equal(cfg.companyUrl, '');
+  assert.equal(loadConfig({ COMPANY_URL: 'https://example.com/' }).companyUrl, 'https://example.com');
+  assert.equal(loadConfig({ COMPANY_URL: 'javascript:alert(1)' }).companyUrl, '');
   assert.equal(cfg.maxFileMb, 1);
 });
 

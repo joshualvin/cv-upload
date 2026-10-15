@@ -118,7 +118,8 @@ In column B, write the requirements in plain words. For example: `Diploma or hig
 | Variable | Default | Description |
 | --- | --- | --- |
 | `PUBLIC_URL` | derived from request | The address the QR code points to, e.g. `https://cv.example.com` |
-| `COMPANY_NAME` | `Our Company` | Shown on the form, the poster and the consent text |
+| `COMPANY_NAME` | `Our Company` | Shown on the form, the poster and the consent text. Its initials form the logo tile in the header |
+| `COMPANY_URL` | – | Your main website, e.g. `https://example.com`. Adds a "Visit website" button to the header |
 | `DRIVE_MODE` | `google` | `google` or `local` |
 | `DRIVE_FOLDER_ID` | – | Target Drive folder |
 | `DRIVE_SUBFOLDER_PER_POSITION` | `false` | File CVs into one subfolder per position |

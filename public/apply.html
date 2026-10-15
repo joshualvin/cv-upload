@@ -3,12 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#1f4fd8">
+  <meta name="theme-color" content="#F6F6F4">
   <title>Submit your CV</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="/style.css">
+  <script src="/brand.js" defer></script>
   <script src="/upload.js" defer></script>
 </head>
 <body>
+  <header class="site-header">
+    <a class="brand" href="/">
+      <span class="mark" id="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text">
+        <strong data-company>Careers</strong>
+        <small class="mono">Careers</small>
+      </span>
+    </a>
+    <a class="button dark" id="site-link" hidden><span class="wide-only">Visit website</span><span class="narrow-only">Website</span> <span aria-hidden="true">→</span></a>
+  </header>
   <main class="card">
     <a class="back" href="/">← All openings</a>
     <header>
@@ -83,5 +97,6 @@
       <button type="button" class="secondary" id="again">Submit another CV</button>
     </section>
   </main>
+  <footer class="site-footer mono">© <span id="year"></span> <span data-company></span></footer>
 </body>
 </html>

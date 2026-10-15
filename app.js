@@ -63,7 +63,7 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
       'Referrer-Policy': 'no-referrer',
       'X-Frame-Options': 'DENY',
       'Content-Security-Policy':
-        "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; form-action 'self'; frame-ancestors 'none'",
+        "default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; form-action 'self'; frame-ancestors 'none'",
     });
     next();
   });
@@ -98,6 +98,7 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
   app.get('/api/config', (req, res) => {
     res.json({
       companyName: config.companyName,
+      companyUrl: config.companyUrl,
       maxFileMb: config.maxFileMb,
       allowedExtensions: ALLOWED_EXTENSIONS,
     });
