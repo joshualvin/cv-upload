@@ -89,7 +89,7 @@ Sort or filter by any column, for example by match score from highest to lowest.
 **Setup:**
 1. Create an empty Google Sheet with the same Google account that owns the Drive folder. Copy its ID from the URL (`https://docs.google.com/spreadsheets/d/THIS_PART/edit`) into `GOOGLE_SHEET_ID`.
 2. In Google Cloud Console, go to **APIs & Services → Library → Google Sheets API → Enable**. Your existing refresh token already covers Sheets, so you don't need to run `get-token` again.
-3. Put your Anthropic API key in `ANTHROPIC_API_KEY`. Optionally set `TIMEZONE`, for example `Asia/Kuala_Lumpur`.
+3. Put your Anthropic API key in `ANTHROPIC_API_KEY` (and, if the key is not scoped to a workspace, the workspace's ID in `ANTHROPIC_WORKSPACE_ID`). Optionally set `TIMEZONE`, for example `Asia/Kuala_Lumpur`.
 4. Restart or redeploy, then open `/healthz`. It should show `"ai": "on (claude-opus-5-5)"` and the sheet. The app creates the **Applicants** and **Positions** tabs automatically.
 
 **Position dropdown and requirements:** the **Positions** tab controls both the form's dropdown and the AI scoring:
@@ -128,6 +128,7 @@ In column B, write the requirements in plain words. For example: `Diploma or hig
 | `TRUST_PROXY` | `false` | Set to `true` behind nginx, Cloud Run, Render and similar, so rate limiting sees each candidate's real IP |
 | `JOBS_FILE` | `data/jobs.json` | Job openings file, used only when no Google Sheet is connected |
 | `ANTHROPIC_API_KEY` | – | Turns on AI review of each CV |
+| `ANTHROPIC_WORKSPACE_ID` | – | Needed when the key is not scoped to a workspace (error "must include the anthropic-workspace-id header"); the workspace's ID from the Claude Console |
 | `AI_MODEL` | `claude-opus-5-5` | Claude model used for the review |
 | `GOOGLE_SHEET_ID` | – | Sheet that receives one row per applicant |
 | `POSITIONS` | – | Dropdown options when there's no Positions tab, comma-separated |
