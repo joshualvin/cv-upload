@@ -132,6 +132,7 @@
     const email = form.elements.email.value.trim();
     if (!name) (ok = false), setError('name', 'Silakan isi nama lengkap Anda.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) (ok = false), setError('email', 'Silakan isi alamat email yang valid.');
+    if (!form.elements.phone.value.trim()) (ok = false), setError('phone', 'Silakan isi nomor WA/HP Anda.');
     if (dropdown && !dropdown.value) (ok = false), setError('position', 'Silakan pilih posisi, atau Lainnya.');
     const fileErr = checkFile();
     if (fileErr) (ok = false), setError('cv', fileErr);

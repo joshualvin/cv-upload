@@ -141,7 +141,7 @@ test('upload -> AI -> sheet row, end to end in local mode', async () => {
 
   try {
     const fd = new FormData();
-    for (const [k, v] of Object.entries({ name: 'Jane Doe', email: 'jane@example.com', position: 'Sales Associate', consent: 'yes' })) {
+    for (const [k, v] of Object.entries({ name: 'Jane Doe', email: 'jane@example.com', phone: '0812 3456 7890', position: 'Sales Associate', consent: 'yes' })) {
       fd.set(k, v);
     }
     fd.set('cv', new Blob([PDF]), 'cv.pdf');

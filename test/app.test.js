@@ -151,7 +151,7 @@ test('reports missing fields and consent', async () => {
   const res = await fetch(base + '/api/upload', { method: 'POST', body: form({ email: 'nope' }) });
   assert.equal(res.status, 400);
   const { errors } = await res.json();
-  assert.deepEqual(Object.keys(errors).sort(), ['consent', 'cv', 'email', 'name']);
+  assert.deepEqual(Object.keys(errors).sort(), ['consent', 'cv', 'email', 'name', 'phone']);
 });
 
 test('rejects files over the size limit', async () => {
@@ -186,11 +186,19 @@ test('lists dropdown positions with an Other option', async () => {
 
 test('"Other" keeps the role the candidate is looking for', () => {
   const { validateFields } = require('../lib/validate');
-  const base = { name: 'A', email: 'a@b.co', consent: 'yes' };
+  const base = { name: 'A', email: 'a@b.co', phone: '0812 3456 7890', consent: 'yes' };
   const other = validateFields({ ...base, position: 'other', position_other: ' warehouse ' });
   assert.deepEqual(Object.keys(other.errors), []);
   assert.equal(other.data.position, 'Other');
   assert.equal(other.data.otherInterest, 'warehouse');
   // The extra box is ignored unless "Other" is chosen.
   assert.equal(validateFields({ ...base, position: 'Cashier', position_other: 'x' }).data.otherInterest, '');
+});
+
+test('WA/HP number is required', () => {
+  const { validateFields } = require('../lib/validate');
+  const base = { name: 'A', email: 'a@b.co', consent: 'yes' };
+  assert.equal(validateFields(base).errors.phone, 'Silakan isi nomor WA/HP Anda.');
+  assert.equal(validateFields({ ...base, phone: '   ' }).errors.phone, 'Silakan isi nomor WA/HP Anda.');
+  assert.equal(validateFields({ ...base, phone: '0812 3456 7890' }).errors.phone, undefined);
 });
