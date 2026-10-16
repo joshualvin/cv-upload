@@ -36,12 +36,12 @@ function describeError(err) {
   return text;
 }
 
-// Load an HTML page and stamp its CSS/JS links with a hash of each file.
+// Load an HTML page and stamp its CSS/JS/PNG links with a hash of each file.
 // Some CDNs (e.g. Hostinger's) strip Cache-Control from static files, and
 // Safari then keeps serving an old stylesheet; a new URL per deploy avoids that.
 function loadPage(publicDir, name) {
   return fs.readFileSync(path.join(publicDir, name), 'utf8').replace(
-    /(href|src)="\/([\w-]+\.(?:css|js))"/g,
+    /(href|src)="\/([\w-]+\.(?:css|js|png))"/g,
     (match, attr, file) => {
       const target = path.join(publicDir, file);
       if (!fs.existsSync(target)) return match;
