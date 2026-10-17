@@ -39,17 +39,23 @@ function describeError(err) {
 // Load an HTML page and stamp its CSS/JS/PNG links with a hash of each file.
 // Some CDNs (e.g. Hostinger's) strip Cache-Control from static files, and
 // Safari then keeps serving an old stylesheet; a new URL per deploy avoids that.
-function loadPage(publicDir, name) {
-  return fs.readFileSync(path.join(publicDir, name), 'utf8').replace(
-    /(href|src)="\/([\w-]+\.(?:css|js|png))"/g,
-    (match, attr, file) => {
+// The hashes go into `versions`, so only a current URL is cached for a year.
+// The public settings go into the page as JSON, which saves phones a request.
+function loadPage(publicDir, name, versions, siteConfig) {
+  const json = JSON.stringify(siteConfig).replace(/</g, '\\u003c');
+  return fs
+    .readFileSync(path.join(publicDir, name), 'utf8')
+    .replace(/(href|src)="\/([\w-]+\.(?:css|js|png))"/g, (match, attr, file) => {
       const target = path.join(publicDir, file);
       if (!fs.existsSync(target)) return match;
       const hash = crypto.createHash('sha1').update(fs.readFileSync(target)).digest('hex').slice(0, 10);
+      versions[file] = hash;
       return `${attr}="/${file}?v=${hash}"`;
-    }
-  );
+    })
+    .replace('</head>', `  <script type="application/json" id="site-config">${json}</script>\n</head>`);
 }
+
+const YEAR = 'public, max-age=31536000, immutable';
 
 function createApp(config, storage, { analyzer = null, sheet = null, processor = null } = {}) {
   const app = express();
@@ -63,13 +69,22 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
       'Referrer-Policy': 'no-referrer',
       'X-Frame-Options': 'DENY',
       'Content-Security-Policy':
-        "default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; form-action 'self'; frame-ancestors 'none'",
+        "default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'; form-action 'self'; frame-ancestors 'none'",
     });
     next();
   });
 
+  const siteConfig = {
+    companyName: config.companyName,
+    companyUrl: config.companyUrl,
+    maxFileMb: config.maxFileMb,
+    allowedExtensions: ALLOWED_EXTENSIONS,
+  };
   const publicDir = path.join(__dirname, 'public');
-  const pages = Object.fromEntries(['jobs.html', 'apply.html', 'qr.html'].map((n) => [n, loadPage(publicDir, n)]));
+  const versions = {};
+  const pages = Object.fromEntries(
+    ['jobs.html', 'apply.html', 'qr.html'].map((n) => [n, loadPage(publicDir, n, versions, siteConfig)])
+  );
   const sendPage = (res, name) => res.type('html').set('Cache-Control', 'no-cache').send(pages[name]);
   app.get('/', (req, res) => {
     // QR codes printed before the job board existed point at /?position=...
@@ -84,7 +99,13 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
   app.use(
     express.static(publicDir, {
       index: false,
-      setHeaders: (res) => res.set('Cache-Control', 'no-cache'),
+      // Versioned files and fonts (version in the file name) never change at
+      // their URL; everything else is checked again on each visit.
+      setHeaders: (res, filePath) => {
+        const file = path.relative(publicDir, filePath).split(path.sep).join('/');
+        const current = versions[file] && res.req.query.v === versions[file];
+        res.set('Cache-Control', current || file.startsWith('fonts/') ? YEAR : 'no-cache');
+      },
     })
   );
 
@@ -95,14 +116,7 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
     return position ? `${base}/apply?position=${encodeURIComponent(position)}` : `${base}/`;
   }
 
-  app.get('/api/config', (req, res) => {
-    res.json({
-      companyName: config.companyName,
-      companyUrl: config.companyUrl,
-      maxFileMb: config.maxFileMb,
-      allowedExtensions: ALLOWED_EXTENSIONS,
-    });
-  });
+  app.get('/api/config', (req, res) => res.json(siteConfig));
 
   // Dropdown options: open positions from the sheet, else the POSITIONS setting.
   app.get('/api/positions', async (req, res) => {

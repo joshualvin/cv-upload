@@ -1,9 +1,19 @@
 (function () {
   'use strict';
 
+  // The public settings come inside the page (see loadPage in app.js); the
+  // other scripts on the page use window.siteConfig instead of asking again.
+  function readConfig() {
+    try {
+      return Promise.resolve(JSON.parse(document.getElementById('site-config').textContent));
+    } catch (_) {
+      return fetch('/api/config').then((r) => r.json());
+    }
+  }
+  window.siteConfig = readConfig();
+
   // Fills the shared page header: company name and website link.
-  fetch('/api/config')
-    .then((r) => r.json())
+  window.siteConfig
     .then((cfg) => {
       document.querySelectorAll('[data-company]').forEach((el) => (el.textContent = cfg.companyName));
       const site = document.getElementById('site-link');

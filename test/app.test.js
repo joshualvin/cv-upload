@@ -94,9 +94,36 @@ test('pages link versioned assets so browsers never reuse a stale stylesheet', a
   const html = await res.text();
   assert.match(html, /href="\/style\.css\?v=[0-9a-f]{10}"/);
   assert.match(html, /src="\/jobs\.js\?v=[0-9a-f]{10}"/);
+  // The current URL is cached for a year; any other one is checked each time.
   const css = await fetch(base + html.match(/href="(\/style\.css\?v=\w+)"/)[1]);
   assert.equal(css.status, 200);
-  assert.equal(css.headers.get('cache-control'), 'no-cache');
+  assert.equal(css.headers.get('cache-control'), 'public, max-age=31536000, immutable');
+  assert.equal((await fetch(base + '/style.css')).headers.get('cache-control'), 'no-cache');
+  assert.equal((await fetch(base + '/style.css?v=0000000000')).headers.get('cache-control'), 'no-cache');
+});
+
+test('fonts are served from the site and cached for a year', async () => {
+  const font = await fetch(base + '/fonts/geist-v5-latin.woff2');
+  assert.equal(font.status, 200);
+  assert.equal(font.headers.get('cache-control'), 'public, max-age=31536000, immutable');
+  const csp = font.headers.get('content-security-policy');
+  assert.match(csp, /font-src 'self'/);
+  assert.doesNotMatch(csp, /googleapis|gstatic/);
+  const css = await (await fetch(base + '/style.css')).text();
+  assert.match(css, /url\("\/fonts\/geist-v5-latin\.woff2"\)/);
+  assert.match(css, /url\("\/fonts\/geist-mono-v6-latin\.woff2"\)/);
+});
+
+test('pages carry the public settings, so no extra request is needed', async () => {
+  for (const p of ['/', '/apply', '/qr']) {
+    const html = await (await fetch(base + p)).text();
+    const json = html.match(/<script type="application\/json" id="site-config">(.*?)<\/script>/);
+    assert.ok(json, p);
+    const cfg = JSON.parse(json[1]);
+    assert.equal(cfg.companyName, 'Acme');
+    assert.equal(cfg.maxFileMb, 1);
+    assert.deepEqual(cfg.allowedExtensions, ['pdf', 'docx', 'doc']);
+  }
 });
 
 test('lists open jobs and skips closed or invalid ones', async () => {

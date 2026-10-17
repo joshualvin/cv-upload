@@ -9,8 +9,7 @@
 
   input.value = new URLSearchParams(location.search).get('position') || '';
 
-  fetch('/api/config')
-    .then((r) => r.json())
+  window.siteConfig
     .then((cfg) => {
       document.getElementById('company').textContent = cfg.companyName + ' sedang merekrut';
     })

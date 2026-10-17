@@ -1,5 +1,22 @@
 /* Look and feel follows the company site: warm off-white, ink-dark panels,
    a burnt-orange accent, Geist type with Geist Mono labels, pill buttons. */
+/* Geist and Geist Mono (SIL OFL, see fonts/OFL.txt), latin subset, served
+   from this site: no extra connection to Google before the first paint. */
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/geist-v5-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/geist-mono-v6-latin.woff2") format("woff2");
+}
+
 :root {
   --bg: #f6f6f4;
   --surface: #ffffff;

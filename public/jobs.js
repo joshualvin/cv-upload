@@ -10,9 +10,8 @@
   let jobs = [];
   let department = '';
 
-  fetch('/api/config')
-    .then((r) => r.json())
-    .then((cfg) => (document.title = 'Karier · ' + cfg.companyName))
+  window.siteConfig
+    .then((cfg) => (document.title = 'Karir · ' + cfg.companyName))
     .catch(() => {});
 
   function el(tag, className, text) {
