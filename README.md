@@ -112,6 +112,7 @@ In column B, write the requirements in plain words. For example: `Diploma or hig
 - **File types:** PDF and DOCX are analysed. Old `.doc` files are saved but marked for manual review.
 - **Fairness:** the AI is told to use only job-relevant facts. It must ignore age, gender, race, religion, marital status, health and photos, and must ignore instructions written inside a CV. Use the score to sort and shortlist, and have a person make every decision. AI in hiring is regulated in some places, so check your local rules.
 - **Without an API key:** if only `GOOGLE_SHEET_ID` is set, applicants are still listed in the sheet, just without AI fields.
+- **Phone numbers:** the form takes Indonesian mobile (WhatsApp) numbers only, written any common way (`0812-3456-7890`, `+62 812…`), and saves them as `+62 812-3456-7890`. To bring older rows into that format, run `npm run format-phones` (dry run) and then `npm run format-phones -- --apply`. Numbers it can't read are listed and left as they are.
 
 ## Configuration
 

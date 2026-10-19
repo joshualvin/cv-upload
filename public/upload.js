@@ -88,6 +88,33 @@
     formError.textContent = '';
   }
 
+  // Same rule as normalizePhone in lib/validate.js: an Indonesian mobile number
+  // (0812..., 62812..., +62 812...). Returns the digits after 0 / +62, or ''.
+  function phoneDigits(value) {
+    let digits = value.replace(/[\s().\-]/g, '');
+    if (digits.startsWith('+')) {
+      if (!digits.startsWith('+62')) return '';
+      digits = digits.slice(3);
+    } else if (digits.startsWith('62')) digits = digits.slice(2);
+    digits = digits.replace(/^0/, '');
+    return /^8\d{8,11}$/.test(digits) ? digits : '';
+  }
+
+  function checkPhone() {
+    const value = form.elements.phone.value.trim();
+    if (!value) return 'Silakan isi nomor WA/HP Anda.';
+    if (!phoneDigits(value)) return 'Gunakan nomor HP Indonesia, misalnya 0812-3456-7890.';
+    return '';
+  }
+
+  // Show a valid number the way it is usually written here: 0812-3456-7890.
+  form.elements.phone.addEventListener('blur', () => {
+    const value = form.elements.phone.value.trim();
+    const digits = phoneDigits(value);
+    if (digits) form.elements.phone.value = '0' + digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);
+    else if (value) setError('phone', checkPhone());
+  });
+
   function checkFile() {
     const file = fileInput.files[0];
     if (!file) return 'Silakan pilih file CV Anda.';
@@ -131,7 +158,8 @@
     const email = form.elements.email.value.trim();
     if (!name) (ok = false), setError('name', 'Silakan isi nama lengkap Anda.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) (ok = false), setError('email', 'Silakan isi alamat email yang valid.');
-    if (!form.elements.phone.value.trim()) (ok = false), setError('phone', 'Silakan isi nomor WA/HP Anda.');
+    const phoneErr = checkPhone();
+    if (phoneErr) (ok = false), setError('phone', phoneErr);
     if (dropdown && !dropdown.value) (ok = false), setError('position', 'Silakan pilih posisi, atau Lainnya.');
     const fileErr = checkFile();
     if (fileErr) (ok = false), setError('cv', fileErr);

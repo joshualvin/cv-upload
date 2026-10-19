@@ -58,7 +58,7 @@ function form(fields, file) {
   return fd;
 }
 
-const valid = { name: 'José Pérez', email: 'jose@example.com', phone: '+1 555 0100', position: 'Sales Associate', consent: 'yes' };
+const valid = { name: 'José Pérez', email: 'jose@example.com', phone: '0812 3456 7890', position: 'Sales Associate', consent: 'yes' };
 
 test('builds a readable, safe file name', () => {
   const date = new Date('2026-10-12T10:00:00Z');
@@ -228,4 +228,30 @@ test('WA/HP number is required', () => {
   assert.equal(validateFields(base).errors.phone, 'Silakan isi nomor WA/HP Anda.');
   assert.equal(validateFields({ ...base, phone: '   ' }).errors.phone, 'Silakan isi nomor WA/HP Anda.');
   assert.equal(validateFields({ ...base, phone: '0812 3456 7890' }).errors.phone, undefined);
+});
+
+test('WA/HP must be an Indonesian mobile number, stored as +62', () => {
+  const { normalizePhone, validateFields } = require('../lib/validate');
+  for (const input of ['0812-3456-7890', '0812 3456 7890', '081234567890', '812 3456 7890', '6281234567890', '+62 812-3456-7890', '+62 (0)812 3456 7890', '+62.812.3456.7890']) {
+    assert.equal(normalizePhone(input), '+62 812-3456-7890', input);
+  }
+  assert.equal(normalizePhone('0857 1234 567'), '+62 857-1234-567'); // 11 digits
+  assert.equal(normalizePhone('0811-2233-44556'), '+62 811-2233-44556'); // 13 digits
+  // Landlines, foreign numbers, too short / long, letters.
+  for (const input of ['021 5555 1234', '+60 12 345 6789', '+1 555 0100', '0812 345', '0812 3456 7890 123', '08I2 3456 7890', '62']) {
+    assert.equal(normalizePhone(input), '', input);
+  }
+  const base = { name: 'A', email: 'a@b.co', consent: 'yes' };
+  assert.equal(validateFields({ ...base, phone: '0812 3456 7890' }).data.phone, '+62 812-3456-7890');
+  assert.equal(validateFields({ ...base, phone: '021 5555 1234' }).errors.phone, 'Gunakan nomor HP Indonesia, misalnya 0812-3456-7890.');
+});
+
+test('format-phones plans only real changes and leaves odd numbers alone', () => {
+  const { planPhoneUpdates } = require('../scripts/format-phones');
+  const plan = planPhoneUpdates([['0812 3456 7890'], [], ["'+62 812-3456-7890"], [81234567890], ['021 5555 1234'], ['']]);
+  assert.deepEqual(plan.updates, [
+    { row: 2, from: '0812 3456 7890', to: '+62 812-3456-7890' },
+    { row: 5, from: '81234567890', to: '+62 812-3456-7890' },
+  ]);
+  assert.deepEqual(plan.skipped, [{ row: 6, value: '021 5555 1234' }]);
 });
