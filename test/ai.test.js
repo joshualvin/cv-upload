@@ -260,3 +260,30 @@ test('"Other" asks the AI for role suggestions instead of a score', async () => 
   assert.match(task, /"warehouse"/);
   assert.match(task, /match_score to null/);
 });
+
+test('a review with no red flags says None; no review leaves it blank', () => {
+  const at = HEADERS.indexOf('Red flags');
+  const job = { submittedAt: new Date(), data: { name: 'A', email: 'a@b.co', phone: '', position: 'Sales' }, cvLink: '' };
+  assert.equal(buildRow(job, { result: { ...RESULT, red_flags: [] } }, 'Analysed')[at], 'None');
+  assert.equal(buildRow(job, null, 'AI failed')[at], '');
+});
+
+test('review-existing picks unreviewed rows with a CV and writes only the new columns', () => {
+  const { planReviews, reviewCells, driveFileId } = require('../scripts/review-existing');
+  const row = (name, cv, flags = '', position = 'Sales') => {
+    const cells = Array(HEADERS.length).fill('');
+    cells[HEADERS.indexOf('Name')] = name;
+    cells[HEADERS.indexOf('Position')] = position;
+    cells[HEADERS.indexOf('CV')] = cv;
+    cells[HEADERS.indexOf('Red flags')] = flags;
+    return cells;
+  };
+  const link = '=HYPERLINK("https://drive.google.com/file/d/abc_123-X/view","Open CV")';
+  assert.equal(driveFileId(link), 'abc_123-X');
+  const plan = planReviews([row('Old', link), row('Done', link, 'None'), row('NoCv', ''), [], row('Short', link).slice(0, 5)]);
+  assert.deepEqual(plan.todo.map((t) => [t.row, t.name, t.fileId]), [[2, 'Old', 'abc_123-X']]);
+  assert.deepEqual(plan.noCv, [4, 6]);
+  assert.deepEqual(reviewCells({ result: RESULT }), [RESULT.red_flags.join('\n'), 0.8]);
+  assert.deepEqual(reviewCells({ result: { ...RESULT, red_flags: [], average_years_per_job: null } }), ['None', '']);
+  assert.match(reviewCells({ skipped: 'Old .doc format' })[0], /^Not reviewed: Old \.doc/);
+});

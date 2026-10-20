@@ -9,7 +9,8 @@
     "dev": "DRIVE_MODE=local node --watch server.js",
     "test": "node --test test/*.test.js",
     "get-token": "node scripts/get-refresh-token.js",
-    "format-phones": "node scripts/format-phones.js"
+    "format-phones": "node scripts/format-phones.js",
+    "review-existing": "node scripts/review-existing.js"
   },
   "engines": {
     "node": ">=20"
