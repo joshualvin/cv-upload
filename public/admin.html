@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F6F6F4">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+  <title>Unggah CV offline</title>
+  <link rel="preload" href="/fonts/geist-v5-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/geist-mono-v6-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/brand.js" defer></script>
+  <script src="/admin.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">
+      <img class="mark" src="/logo.png" alt="" width="40" height="40">
+      <span class="brand-text">
+        <strong data-company>Karir</strong>
+        <small class="mono">Staf</small>
+      </span>
+    </a>
+  </header>
+  <main class="card">
+    <header>
+      <p class="eyebrow">Khusus staf</p>
+      <h1>Unggah CV offline</h1>
+      <p class="muted">Untuk lamaran yang masuk langsung atau di atas kertas. Cukup unggah CV-nya (file, scan, atau foto). Nama, email, dan nomor WA/HP dibaca otomatis dari CV, lalu dinilai seperti lamaran online.</p>
+    </header>
+
+    <form id="staff-form" novalidate>
+      <div class="file-field">
+        <span class="label-text">CV <span class="req">*</span></span>
+        <label class="dropzone" id="dropzone">
+          <input name="cv" id="cv" type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png">
+          <span id="file-name">Ketuk untuk memilih atau memotret CV</span>
+          <small class="muted">PDF, DOC, DOCX, JPG, PNG · boleh beberapa sekaligus</small>
+        </label>
+      </div>
+
+      <label>
+        <span class="label-text">Posisi yang dilamar (opsional)</span>
+        <select name="position" id="position">
+          <option value="">Belum ditentukan</option>
+        </select>
+        <small class="hint">Berlaku untuk semua CV yang diunggah bersama.</small>
+      </label>
+
+      <label>
+        <span class="label-text">Catatan (opsional)</span>
+        <input name="note" maxlength="100" placeholder="misalnya walk-in di gudang, job fair 20 Okt">
+      </label>
+
+      <label class="check">
+        <input type="checkbox" name="consent">
+        <span>Pelamar sudah menyetujui CV dan datanya disimpan untuk keperluan rekrutmen.</span>
+      </label>
+
+      <p class="error form-error" id="form-error" role="alert"></p>
+      <button type="submit" id="submit">Unggah CV</button>
+    </form>
+
+    <section id="results" hidden>
+      <h2>Hasil unggahan</h2>
+      <ul class="queue" id="queue"></ul>
+      <p class="muted" id="results-note"></p>
+    </section>
+  </main>
+  <footer class="site-footer mono">© <span id="year"></span> <span data-company></span></footer>
+</body>
+</html>

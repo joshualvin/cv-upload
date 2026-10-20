@@ -17,6 +17,9 @@ const PDF = Buffer.from('%PDF-1.7\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n
 const DOCX = fs.readFileSync(path.join(__dirname, 'fixtures', 'sample-cv.docx'));
 
 const RESULT = {
+  candidate_name: 'Siti Rahma',
+  candidate_email: 'Siti.Rahma@Example.com',
+  candidate_phone: '0812-3456-7890',
   education_level: 'diploma',
   highest_qualification: 'Diploma in Retail Management',
   field_of_study: 'Retail Management',
@@ -138,7 +141,7 @@ test('builds a row matching the headers', () => {
   // Every header gets exactly one value, and the readable order starts with who and the verdict.
   assert.equal(new Set(HEADERS).size, HEADERS.length);
   assert.ok(row.every((v) => v !== undefined));
-  assert.deepEqual(HEADERS.slice(0, 7), ['Submitted', 'Name', 'Position', 'Other role interest', 'Match score', 'Match reason', 'Red flags']);
+  assert.deepEqual(HEADERS.slice(0, 8), ['Submitted', 'Name', 'Position', 'Other role interest', 'Source', 'Match score', 'Match reason', 'Red flags']);
 });
 
 test('upload -> AI -> sheet row, end to end in local mode', async () => {
@@ -169,6 +172,8 @@ test('upload -> AI -> sheet row, end to end in local mode', async () => {
     assert.equal(rows[0].Name, 'Jane Doe');
     assert.equal(rows[0]['Match score'], 85);
     assert.match(rows[0]['AI status'], /Analysed by claude-opus-5-5/);
+    assert.equal(rows[0].Source, 'Online');
+    assert.equal(rows[0].Name, 'Jane Doe'); // the form's details win over what the AI reads
 
     const health = await (await fetch(base + '/healthz')).json();
     assert.equal(health.ok, true);
@@ -348,4 +353,86 @@ test('reorder-columns moves columns left to right into the readable order', () =
   }
   assert.deepEqual(replay, result);
   assert.deepEqual(planMoves(HEADERS).moves, []);
+});
+
+test('staff page: password, then name, email and phone come from the CV', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cv-staff-test-'));
+  const cfg = loadConfig({ DRIVE_MODE: 'local', LOCAL_UPLOAD_DIR: dir, ANTHROPIC_API_KEY: 'test', ADMIN_PASSWORD: 'staff-password-123' });
+  const client = fakeClient();
+  const analyzer = createAnalyzer(cfg, client);
+  const sheet = createSheet(cfg);
+  const processor = createProcessor({ analyzer, sheet, timeZone: 'UTC', log: { log() {}, error() {} } });
+  const server = createApp(cfg, createStorage(cfg), { analyzer, sheet, processor }).listen(0);
+  await new Promise((r) => server.once('listening', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const auth = (pw) => ({ authorization: 'Basic ' + Buffer.from('staf:' + pw).toString('base64') });
+  const JPG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64)]);
+  const staffForm = (fields) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.set(k, v);
+    fd.set('cv', new Blob([JPG]), 'scan CV.jpg');
+    return fd;
+  };
+
+  try {
+    assert.equal((await fetch(base + '/admin')).status, 401);
+    assert.equal((await fetch(base + '/admin', { headers: auth('wrong-password') })).status, 401);
+    const page = await fetch(base + '/admin', { headers: auth('staff-password-123') });
+    assert.equal(page.status, 200);
+    assert.match(await page.text(), /Unggah CV offline/);
+    assert.equal((await fetch(base + '/admin/api/upload', { method: 'POST', body: staffForm({ consent: 'yes' }) })).status, 401);
+
+    const noConsent = await fetch(base + '/admin/api/upload', { method: 'POST', headers: auth('staff-password-123'), body: staffForm({}) });
+    assert.equal(noConsent.status, 400);
+
+    const res = await fetch(base + '/admin/api/upload', {
+      method: 'POST',
+      headers: auth('staff-password-123'),
+      body: staffForm({ position: 'Sales Associate', note: ' walk-in   di gudang ', consent: 'yes' }),
+    });
+    assert.equal(res.status, 200, await res.clone().text());
+    while (processor.pending) await new Promise((r) => setTimeout(r, 10));
+
+    assert.equal(client.calls[0].messages[0].content[0].type, 'image');
+    assert.equal(client.calls[0].messages[0].content[0].source.media_type, 'image/jpeg');
+    const rows = fs.readFileSync(path.join(dir, 'applicants.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].Name, 'Siti Rahma');
+    assert.equal(rows[0].Email, 'siti.rahma@example.com');
+    assert.equal(rows[0].Phone, "'+62 812-3456-7890"); // ' keeps it text in Sheets
+    assert.equal(rows[0].Position, 'Sales Associate');
+    assert.equal(rows[0].Source, 'Offline: walk-in di gudang');
+
+    // The file was saved under a temporary name and renamed once the AI had read it.
+    const saved = fs.readdirSync(dir).filter((f) => f.endsWith('.jpg'));
+    assert.equal(saved.length, 1);
+    assert.match(saved[0], /_\d{4}-\d{2}-\d{2}_Siti-Rahma_Sales-Associate\.jpg$/);
+    const meta = JSON.parse(fs.readFileSync(path.join(dir, saved[0] + '.json'), 'utf8'));
+    assert.match(meta.description, /Phone: \+62 812-3456-7890/);
+    assert.equal(meta.properties.source, 'offline');
+
+    // Photos are for the staff page only.
+    const publicForm = new FormData();
+    for (const [k, v] of Object.entries({ name: 'A', email: 'a@b.co', phone: '0812 3456 7890', consent: 'yes' })) publicForm.set(k, v);
+    publicForm.set('cv', new Blob([JPG]), 'cv.jpg');
+    assert.equal((await fetch(base + '/api/upload', { method: 'POST', body: publicForm })).status, 400);
+  } finally {
+    server.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('staff page stays off without a long enough ADMIN_PASSWORD', async () => {
+  for (const pw of ['', 'short']) {
+    const cfg = loadConfig({ DRIVE_MODE: 'local', LOCAL_UPLOAD_DIR: os.tmpdir(), ADMIN_PASSWORD: pw });
+    const server = createApp(cfg, createStorage(cfg)).listen(0);
+    await new Promise((r) => server.once('listening', r));
+    try {
+      const base = `http://127.0.0.1:${server.address().port}`;
+      assert.equal((await fetch(base + '/admin')).status, 404);
+      assert.equal((await fetch(base + '/admin/api/upload', { method: 'POST' })).status, 404);
+    } finally {
+      server.close();
+    }
+  }
 });

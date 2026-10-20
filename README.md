@@ -116,6 +116,12 @@ In column B, write the requirements in plain words. For example: `Diploma or hig
 - **Without an API key:** if only `GOOGLE_SHEET_ID` is set, applicants are still listed in the sheet, just without AI fields.
 - **Phone numbers:** the form takes Indonesian mobile (WhatsApp) numbers only, written any common way (`0812-3456-7890`, `+62 812…`), and saves them as `+62 812-3456-7890`. To bring older rows into that format, run `npm run format-phones` (dry run) and then `npm run format-phones -- --apply`. Numbers it can't read are listed and left as they are.
 
+## Staff page for offline applications
+
+For CVs handed in on paper or in person, open **`/admin`** (for example `https://career.wautama.com/admin`) and sign in with the password in `ADMIN_PASSWORD`; any user name works. Without that setting, or with fewer than 10 characters, the page is off.
+
+Upload one or several CVs at once: PDF, DOC, DOCX, or a **scan or phone photo** (JPG/PNG; photos are shrunk in the browser first). Optionally choose the position and a note such as "walk-in di gudang", tick that the applicant agreed, and upload. Nothing else needs typing: the AI reads the applicant's **name, email and WA/HP number** from the CV, the file in Drive is renamed to the usual `date_Name_Position` format, and the sheet row is written with the same review as online applications, about a minute per CV. The **Source** column says `Online` for the public form and `Offline` (with the note) for this page. Needs `ANTHROPIC_API_KEY` and `GOOGLE_SHEET_ID`. After 10 wrong passwords from one address the page refuses for 15 minutes.
+
 ## Configuration
 
 | Variable | Default | Description |
@@ -133,6 +139,7 @@ In column B, write the requirements in plain words. For example: `Diploma or hig
 | `ANTHROPIC_API_KEY` | – | Turns on AI review of each CV |
 | `ANTHROPIC_WORKSPACE_ID` | – | Needed when the key is not scoped to a workspace (error "must include the anthropic-workspace-id header"); the workspace's ID from the Claude Console |
 | `AI_MODEL` | `claude-opus-5-5` | Claude model used for the review |
+| `ADMIN_PASSWORD` | – | Turns on the staff page `/admin` for offline applications (at least 10 characters) |
 | `REVIEW_EXISTING` | `on` | After start-up, review earlier applications whose **Red flags** cell is empty (about $0.05 each); `off` to skip |
 | `GOOGLE_SHEET_ID` | – | Sheet that receives one row per applicant |
 | `POSITIONS` | – | Dropdown options when there's no Positions tab, comma-separated |

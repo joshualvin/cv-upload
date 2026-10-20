@@ -9,7 +9,15 @@ const QRCode = require('qrcode');
 
 const { createJobs } = require('./lib/jobs');
 const { rateLimit } = require('./lib/rateLimit');
-const { OTHER_POSITION, ALLOWED_EXTENSIONS, detectFileType, validateFields, buildFileName } = require('./lib/validate');
+const {
+  OTHER_POSITION,
+  ALLOWED_EXTENSIONS,
+  OFFLINE_EXTENSIONS,
+  detectFileType,
+  validateFields,
+  normalizePhone,
+  buildFileName,
+} = require('./lib/validate');
 
 // Drive appProperties allow at most 124 bytes per key + value.
 function fitBytes(key, value) {
@@ -57,6 +65,33 @@ function loadPage(publicDir, name, versions, siteConfig) {
 
 const YEAR = 'public, max-age=31536000, immutable';
 
+/**
+ * Password check for the staff page (HTTP Basic auth; any user name). After
+ * 10 wrong passwords from one address it refuses for 15 minutes.
+ */
+function requireStaff(password) {
+  const want = crypto.createHash('sha256').update(password).digest();
+  const failures = new Map();
+  return (req, res, next) => {
+    const now = Date.now();
+    const seen = failures.get(req.ip);
+    if (seen && seen.reset > now && seen.count >= 10) {
+      return res.status(429).type('text').send('Terlalu banyak percobaan. Coba lagi dalam 15 menit.');
+    }
+    const [scheme, encoded = ''] = String(req.get('authorization') || '').split(' ');
+    const given = scheme === 'Basic' ? Buffer.from(encoded, 'base64').toString('utf8').replace(/^[^:]*:/, '') : '';
+    const got = crypto.createHash('sha256').update(given).digest();
+    if (given && crypto.timingSafeEqual(want, got)) return next();
+    if (given) {
+      const entry = seen && seen.reset > now ? seen : { count: 0, reset: now + 15 * 60 * 1000 };
+      entry.count += 1;
+      failures.set(req.ip, entry);
+    }
+    res.set('WWW-Authenticate', 'Basic realm="Staf", charset="UTF-8"');
+    res.status(401).type('text').send('Masuk dengan kata sandi staf.');
+  };
+}
+
 function createApp(config, storage, { analyzer = null, sheet = null, processor = null } = {}) {
   const app = express();
   const getJobs = createJobs(config.jobsFile);
@@ -83,7 +118,7 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
   const publicDir = path.join(__dirname, 'public');
   const versions = {};
   const pages = Object.fromEntries(
-    ['jobs.html', 'apply.html', 'qr.html'].map((n) => [n, loadPage(publicDir, n, versions, siteConfig)])
+    ['jobs.html', 'apply.html', 'qr.html', 'admin.html'].map((n) => [n, loadPage(publicDir, n, versions, siteConfig)])
   );
   const sendPage = (res, name) => res.type('html').set('Cache-Control', 'no-cache').send(pages[name]);
   app.get('/', (req, res) => {
@@ -198,6 +233,63 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
     limits: { fileSize: config.maxFileMb * 1024 * 1024, files: 1, fields: 10, fieldSize: 2000 },
   });
 
+  /** Drive description and properties for one application. */
+  function fileDetails(data, submittedAt, originalName, source) {
+    const description = [
+      `Name: ${data.name}`,
+      data.email && `Email: ${data.email}`,
+      data.phone && `Phone: ${data.phone}`,
+      data.position && `Position: ${data.position}`,
+      data.otherInterest && `Interested in: ${data.otherInterest}`,
+      `Source: ${data.source}`,
+      `Submitted: ${submittedAt.toISOString()}`,
+      `Original file: ${originalName}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+    const properties = {
+      name: fitBytes('name', data.name),
+      email: fitBytes('email', data.email),
+      phone: fitBytes('phone', data.phone),
+      position: fitBytes('position', data.position),
+      source,
+    };
+    return { description, properties };
+  }
+
+  /** Save one application to Drive, answer, then queue the AI review and sheet row. */
+  async function saveApplication(res, { file, type, data, source }) {
+    const submittedAt = new Date();
+    const fileName = buildFileName(data, type.ext, submittedAt);
+    const { description, properties } = fileDetails(data, submittedAt, file.originalname, source);
+
+    const saved = await storage.save({
+      buffer: file.buffer,
+      fileName,
+      mimeType: type.mimeType,
+      description,
+      properties,
+      position: data.position,
+    });
+    console.log(`[upload] ${fileName} -> ${saved.id}`);
+    res.json({ ok: true, fileName });
+
+    // AI review + spreadsheet row happen after the answer has been sent.
+    if (processor) {
+      processor.enqueue({ buffer: file.buffer, ext: type.ext, fileName, submittedAt, data, cvLink: saved.link });
+    }
+  }
+
+  function checkFile(file, errors, extensions, missing) {
+    if (!file) {
+      errors.cv = missing;
+      return null;
+    }
+    const type = detectFileType(file.originalname, file.buffer, extensions);
+    if (!type) errors.cv = `CV harus berupa file ${extensions.join(', ').toUpperCase()}.`;
+    return type;
+  }
+
   app.post(
     '/api/upload',
     rateLimit({ max: config.rateLimitPerHour }),
@@ -208,55 +300,89 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
         if (req.body && req.body.website) return res.json({ ok: true });
 
         const { data, errors } = validateFields(req.body);
-        let type = null;
-        if (!req.file) errors.cv = 'Silakan pilih file CV Anda.';
-        else {
-          type = detectFileType(req.file.originalname, req.file.buffer);
-          if (!type) errors.cv = `CV harus berupa file ${ALLOWED_EXTENSIONS.join(', ').toUpperCase()}.`;
-        }
+        const type = checkFile(req.file, errors, ALLOWED_EXTENSIONS, 'Silakan pilih file CV Anda.');
         if (Object.keys(errors).length) return res.status(400).json({ error: 'Mohon periksa kembali formulir Anda.', errors });
-
-        const submittedAt = new Date();
-        const fileName = buildFileName(data, type.ext, submittedAt);
-        const description = [
-          `Name: ${data.name}`,
-          `Email: ${data.email}`,
-          data.phone && `Phone: ${data.phone}`,
-          data.position && `Position: ${data.position}`,
-          data.otherInterest && `Interested in: ${data.otherInterest}`,
-          `Submitted: ${submittedAt.toISOString()}`,
-          `Original file: ${req.file.originalname}`,
-        ]
-          .filter(Boolean)
-          .join('\n');
-        const properties = {
-          name: fitBytes('name', data.name),
-          email: fitBytes('email', data.email),
-          phone: fitBytes('phone', data.phone),
-          position: fitBytes('position', data.position),
-          source: 'cv-upload-qr',
-        };
-
-        const saved = await storage.save({
-          buffer: req.file.buffer,
-          fileName,
-          mimeType: type.mimeType,
-          description,
-          properties,
-          position: data.position,
-        });
-        console.log(`[upload] ${fileName} -> ${saved.id}`);
-        res.json({ ok: true, fileName });
-
-        // AI review + spreadsheet row happen after the candidate has their answer.
-        if (processor) {
-          processor.enqueue({ buffer: req.file.buffer, ext: type.ext, fileName, submittedAt, data, cvLink: saved.link });
-        }
+        data.source = 'Online';
+        await saveApplication(res, { file: req.file, type, data, source: 'cv-upload-qr' });
       } catch (err) {
         next(err);
       }
     }
   );
+
+  // Staff page for applications that came in on paper or by hand. Off until
+  // ADMIN_PASSWORD (at least 10 characters) is set.
+  if (config.adminPassword.length >= 10) {
+    const staff = requireStaff(config.adminPassword);
+    app.get('/admin', staff, (req, res) => sendPage(res, 'admin.html'));
+    // Staff only add the CV (file, scan or photo). It is saved at once under a
+    // temporary name; the AI then reads name, email and phone from it, and the
+    // file is renamed and its sheet row written with those details.
+    app.post('/admin/api/upload', staff, upload.single('cv'), async (req, res, next) => {
+      try {
+        if (!analyzer || !processor) {
+          return res.status(503).json({ error: 'Pembacaan CV oleh AI belum aktif (perlu ANTHROPIC_API_KEY dan GOOGLE_SHEET_ID).' });
+        }
+        const errors = {};
+        const type = checkFile(req.file, errors, OFFLINE_EXTENSIONS, 'Pilih file CV atau foto CV.');
+        if (!['on', 'yes', 'true'].includes(String(req.body.consent || '').toLowerCase())) {
+          errors.consent = 'Centang persetujuan pelamar.';
+        }
+        if (Object.keys(errors).length) return res.status(400).json({ error: errors.cv || errors.consent, errors });
+
+        const oneLine = (value, max) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
+        const chosen = oneLine(req.body.position, 100);
+        const note = oneLine(req.body.note, 100);
+        const data = {
+          name: '',
+          email: '',
+          phone: '',
+          position: chosen.toLowerCase() === OTHER_POSITION.toLowerCase() ? OTHER_POSITION : chosen,
+          otherInterest: '',
+          source: note ? `Offline: ${note}` : 'Offline',
+        };
+        const file = req.file;
+        const submittedAt = new Date();
+        const stem = path.parse(file.originalname).name;
+        const tempName = buildFileName({ name: `Offline ${stem}`, position: data.position }, type.ext, submittedAt);
+        const saved = await storage.save({
+          buffer: file.buffer,
+          fileName: tempName,
+          mimeType: type.mimeType,
+          ...fileDetails({ ...data, name: '(being read)' }, submittedAt, file.originalname, 'offline'),
+          position: data.position,
+        });
+        console.log(`[staff] ${tempName} -> ${saved.id}`);
+        res.json({ ok: true, file: file.originalname });
+
+        processor.enqueue({
+          buffer: file.buffer,
+          ext: type.ext,
+          fileName: tempName,
+          submittedAt,
+          data,
+          cvLink: saved.link,
+          fromCv: async (result) => {
+            const r = result || {};
+            const email = oneLine(r.candidate_email, 254).toLowerCase();
+            const phone = oneLine(r.candidate_phone, 30);
+            data.name = oneLine(r.candidate_name, 100) || `(nama tidak terbaca) ${stem}`;
+            data.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
+            data.phone = normalizePhone(phone) || phone;
+            const fileName = buildFileName(data, type.ext, submittedAt);
+            await storage.rename(saved.id, { fileName, ...fileDetails(data, submittedAt, file.originalname, 'offline') });
+          },
+        });
+      } catch (err) {
+        next(err);
+      }
+    });
+  } else {
+    if (config.adminPassword) console.warn('ADMIN_PASSWORD is shorter than 10 characters; the staff page stays off.');
+    app.get('/admin', (req, res) =>
+      res.status(404).type('text').send('Halaman staf belum aktif. Isi ADMIN_PASSWORD (minimal 10 karakter) di pengaturan server.')
+    );
+  }
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
