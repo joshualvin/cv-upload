@@ -118,7 +118,7 @@ In column B, write the requirements in plain words. For example: `Diploma or hig
 
 ## Staff page for offline applications
 
-For CVs handed in on paper or in person, open **`/admin`** (for example `https://career.wautama.com/admin`) and sign in with the password in `ADMIN_PASSWORD`; any user name works. Without that setting, or with fewer than 10 characters, the page is off.
+For CVs handed in on paper or in person, open **`/admin`** (for example `https://career.wautama.com/admin`) and sign in with the password in `ADMIN_PASSWORD`; any user name works. Without that setting, or with fewer than 8 characters, the page is off.
 
 Upload one or several CVs at once: PDF, DOC, DOCX, or a **scan or phone photo** (JPG/PNG; photos are shrunk in the browser first). Optionally choose the position and a note such as "walk-in di gudang", tick that the applicant agreed, and upload. Nothing else needs typing: the AI reads the applicant's **name, email and WA/HP number** from the CV, the file in Drive is renamed to the usual `date_Name_Position` format, and the sheet row is written with the same review as online applications, about a minute per CV. **Social media** lists the handle the applicant gave on the form (optional field *Instagram / LinkedIn*) and any profile links the CV lists, one per line; nothing is searched for or guessed. If you use it for a background check, keep it job-related and look only at public posts, check every shortlisted candidate the same way, and note what you checked: profiles show things a hiring decision must not rest on (religion, ethnicity, family, health; UU PDP and UU 13/2003). **Date of birth** and **Religion** are copied from the CV only when it states them (never guessed), for your records only: the AI is told not to let them affect the score, summary or red flags. Hiring decisions must not be based on religion (UU 13/2003, articles 5–6). The **Source** column says `Online` for the public form and `Offline` (with the note) for this page. Without `ANTHROPIC_API_KEY` (for example when running the app on your own computer while the host is down) the page still works: each CV is saved and its row says **Waiting for AI** with a placeholder name, and the next start of a server that has the key reads those CVs, fills in name, email, WA/HP and the review, and renames the files. Needs `GOOGLE_SHEET_ID`. After 10 wrong passwords from one address the page refuses for 15 minutes.
 
@@ -139,7 +139,7 @@ Upload one or several CVs at once: PDF, DOC, DOCX, or a **scan or phone photo** 
 | `ANTHROPIC_API_KEY` | – | Turns on AI review of each CV |
 | `ANTHROPIC_WORKSPACE_ID` | – | Needed when the key is not scoped to a workspace (error "must include the anthropic-workspace-id header"); the workspace's ID from the Claude Console |
 | `AI_MODEL` | `claude-opus-5-5` | Claude model used for the review |
-| `ADMIN_PASSWORD` | – | Turns on the staff page `/admin` for offline applications (at least 10 characters) |
+| `ADMIN_PASSWORD` | – | Turns on the staff page `/admin` for offline applications (at least 8 characters) |
 | `REVIEW_EXISTING` | `on` | After start-up, review earlier applications whose **Red flags** cell is empty (about $0.05 each); `off` to skip |
 | `GOOGLE_SHEET_ID` | – | Sheet that receives one row per applicant |
 | `POSITIONS` | – | Dropdown options when there's no Positions tab, comma-separated |

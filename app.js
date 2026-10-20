@@ -281,8 +281,8 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
   );
 
   // Staff page for applications that came in on paper or by hand. Off until
-  // ADMIN_PASSWORD (at least 10 characters) is set.
-  if (config.adminPassword.length >= 10) {
+  // ADMIN_PASSWORD (at least 8 characters) is set.
+  if (config.adminPassword.length >= 8) {
     const staff = requireStaff(config.adminPassword);
     app.get('/admin', staff, (req, res) => sendPage(res, 'admin.html'));
     // Staff only add the CV (file, scan or photo). It is saved at once under a
@@ -348,9 +348,9 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
       }
     });
   } else {
-    if (config.adminPassword) console.warn('ADMIN_PASSWORD is shorter than 10 characters; the staff page stays off.');
+    if (config.adminPassword) console.warn('ADMIN_PASSWORD is shorter than 8 characters; the staff page stays off.');
     app.get('/admin', (req, res) =>
-      res.status(404).type('text').send('Halaman staf belum aktif. Isi ADMIN_PASSWORD (minimal 10 karakter) di pengaturan server.')
+      res.status(404).type('text').send('Halaman staf belum aktif. Isi ADMIN_PASSWORD (minimal 8 karakter) di pengaturan server.')
     );
   }
 

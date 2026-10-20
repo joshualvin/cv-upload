@@ -434,7 +434,7 @@ test('staff page: password, then name, email and phone come from the CV', async 
 });
 
 test('staff page stays off without a long enough ADMIN_PASSWORD', async () => {
-  for (const pw of ['', 'short']) {
+  for (const pw of ['', 'short', '7-chars']) {
     const cfg = loadConfig({ DRIVE_MODE: 'local', LOCAL_UPLOAD_DIR: os.tmpdir(), ADMIN_PASSWORD: pw });
     const server = createApp(cfg, createStorage(cfg)).listen(0);
     await new Promise((r) => server.once('listening', r));
@@ -450,7 +450,7 @@ test('staff page stays off without a long enough ADMIN_PASSWORD', async () => {
 
 test('staff upload without the AI is saved as "Waiting for AI"', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cv-wait-test-'));
-  const cfg = loadConfig({ DRIVE_MODE: 'local', LOCAL_UPLOAD_DIR: dir, ADMIN_PASSWORD: 'staff-password-123' });
+  const cfg = loadConfig({ DRIVE_MODE: 'local', LOCAL_UPLOAD_DIR: dir, ADMIN_PASSWORD: '8-chars!' }); // 8 is enough
   const sheet = createSheet(cfg);
   const server = createApp(cfg, createStorage(cfg), { analyzer: null, sheet, processor: null }).listen(0);
   await new Promise((r) => server.once('listening', r));
@@ -461,7 +461,7 @@ test('staff upload without the AI is saved as "Waiting for AI"', async () => {
     fd.set('cv', new Blob([PDF]), 'CV Budi.pdf');
     const res = await fetch(`http://127.0.0.1:${server.address().port}/admin/api/upload`, {
       method: 'POST',
-      headers: { authorization: 'Basic ' + Buffer.from('x:staff-password-123').toString('base64') },
+      headers: { authorization: 'Basic ' + Buffer.from('x:8-chars!').toString('base64') },
       body: fd,
     });
     assert.deepEqual(await res.json(), { ok: true, file: 'CV Budi.pdf', waiting: true });
