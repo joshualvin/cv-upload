@@ -22,6 +22,7 @@ const RESULT = {
   candidate_phone: '0812-3456-7890',
   candidate_birth_date: '1990-05-14',
   candidate_religion: 'Islam',
+  candidate_social_links: ['linkedin.com/in/sitirahma', 'Instagram: @siti.rahma'],
   education_level: 'diploma',
   highest_qualification: 'Diploma in Retail Management',
   field_of_study: 'Retail Management',
@@ -164,7 +165,7 @@ test('upload -> AI -> sheet row, end to end in local mode', async () => {
 
   try {
     const fd = new FormData();
-    for (const [k, v] of Object.entries({ name: 'Jane Doe', email: 'jane@example.com', phone: '0812 3456 7890', position: 'Sales Associate', consent: 'yes' })) {
+    for (const [k, v] of Object.entries({ name: 'Jane Doe', email: 'jane@example.com', phone: '0812 3456 7890', social: '@janedoe', position: 'Sales Associate', consent: 'yes' })) {
       fd.set(k, v);
     }
     fd.set('cv', new Blob([PDF]), 'cv.pdf');
@@ -179,6 +180,8 @@ test('upload -> AI -> sheet row, end to end in local mode', async () => {
     assert.equal(rows[0]['Match score'], 85);
     assert.match(rows[0]['AI status'], /Analysed by claude-opus-5-5/);
     assert.equal(rows[0].Source, 'Online');
+    // The handle from the form first, then the CV's, one per line.
+    assert.equal(rows[0]['Social media'], "'@janedoe\nlinkedin.com/in/sitirahma\nInstagram: @siti.rahma"); // ' keeps @ from being a formula
     assert.equal(rows[0].Name, 'Jane Doe'); // the form's details win over what the AI reads
 
     const health = await (await fetch(base + '/healthz')).json();
@@ -557,4 +560,15 @@ test('completing a waiting row keeps filled cells the AI found nothing for', asy
   // The Drive file is named after the kept name, with the kept email in its details.
   assert.equal(renames[0].fileName, '2026-10-20_R-Bobby-Surya-Bernanda_Accounting.pdf');
   assert.match(renames[0].description, /Email: bobby@example\.com/);
+});
+
+test('social links: form first, then the CV, without repeats', () => {
+  const { socialLinks } = require('../lib/sheet');
+  assert.equal(socialLinks('@budi', ['https://instagram.com/budi_x', 'https://www.linkedin.com/in/budi/', 'linkedin.com/in/budi']), '@budi\nhttps://instagram.com/budi_x\nhttps://www.linkedin.com/in/budi/');
+  assert.equal(socialLinks("'Instagram: @a\nlinkedin.com/in/a", ['linkedin.com/in/a/']), 'Instagram: @a\nlinkedin.com/in/a');
+  assert.equal(socialLinks('', []), '');
+  const { validateFields } = require('../lib/validate');
+  const base = { name: 'A', email: 'a@b.co', phone: '0812 3456 7890', consent: 'yes' };
+  assert.equal(validateFields({ ...base, social: ' @a ' }).data.social, '@a');
+  assert.equal(validateFields({ ...base, social: 'x'.repeat(201) }).errors.social, 'Maksimal 200 karakter.');
 });
