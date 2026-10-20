@@ -573,3 +573,44 @@ test('social links: form first, then the CV, without repeats', () => {
   assert.equal(validateFields({ ...base, social: ' @a ' }).data.social, '@a');
   assert.equal(validateFields({ ...base, social: 'x'.repeat(201) }).errors.social, 'Maksimal 200 karakter.');
 });
+
+test('"Review again" redoes the AI columns and keeps the applicant\'s details', async () => {
+  const { reviewExisting } = require('../lib/backfill');
+  const cells = Array(HEADERS.length).fill('');
+  const set = (h, v) => (cells[HEADERS.indexOf(h)] = v);
+  set('Name', 'Vaneza Aurelia Pomayaan');
+  set('Email', 'vpomayaan11@gmail.com');
+  set('Phone', "'+62 895-1007-3122");
+  set('Social media', 'Instagram: @vanezaaureli_');
+  set('Position', 'Sales');
+  set('Source', 'Online (job fair)');
+  set('Red flags', 'Klaim pengalaman 5 tahun'); // already reviewed, in another language
+  set('Date of birth', '1990-01-01'); // filled in by hand; the AI finds none below
+  set('AI status', 'Review again');
+  set('CV', '=HYPERLINK("https://drive.google.com/file/d/v1/view","Open CV")');
+  const untouched = Array(HEADERS.length).fill(''); // a reviewed row not marked: left alone
+  untouched[HEADERS.indexOf('Red flags')] = 'None';
+  untouched[HEADERS.indexOf('CV')] = cells[HEADERS.indexOf('CV')];
+  const updates = [];
+  const sheet = {
+    readApplicants: async () => [cells, untouched],
+    getRequirements: async () => '',
+    updateRow: async (row, values, names) => updates.push({ row, values, names }),
+    writeReview: async () => assert.fail('a reviewed row must not be touched'),
+  };
+  const storage = {
+    download: async () => ({ buffer: PDF, name: 'cv.pdf', description: '' }),
+    rename: async () => assert.fail('the Drive file is not renamed'),
+  };
+  const client = fakeClient({ content: [{ type: 'text', text: JSON.stringify({ ...RESULT, candidate_birth_date: '' }) }] });
+  const out = await reviewExisting({ analyzer: createAnalyzer(config, client), sheet, storage, log: { log() {}, error() {} } });
+  assert.deepEqual(out, { reviewed: 1, total: 1 });
+  const [{ row, values, names }] = updates;
+  assert.equal(row, 2);
+  for (const kept of ['Name', 'Email', 'Phone', 'Social media', 'Position', 'Source', 'Submitted', 'CV', 'Date of birth']) {
+    assert.ok(!names.includes(kept), kept + ' must stay');
+  }
+  assert.match(values[HEADERS.indexOf('Red flags')], /Frequent job changes/);
+  assert.match(values[HEADERS.indexOf('AI status')], /Analysed by/);
+  for (const h of ['Red flags', 'AI status', 'Summary', 'Match score', 'Religion']) assert.ok(names.includes(h), h);
+});
