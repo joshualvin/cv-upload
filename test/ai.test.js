@@ -268,8 +268,8 @@ test('a review with no red flags says None; no review leaves it blank', () => {
   assert.equal(buildRow(job, null, 'AI failed')[at], '');
 });
 
-test('review-existing picks unreviewed rows with a CV and writes only the new columns', () => {
-  const { planReviews, reviewCells, driveFileId } = require('../scripts/review-existing');
+test('backfill picks unreviewed rows with a CV and writes only the new columns', () => {
+  const { planReviews, reviewCells, driveFileId } = require('../lib/backfill');
   const row = (name, cv, flags = '', position = 'Sales') => {
     const cells = Array(HEADERS.length).fill('');
     cells[HEADERS.indexOf('Name')] = name;
@@ -286,4 +286,35 @@ test('review-existing picks unreviewed rows with a CV and writes only the new co
   assert.deepEqual(reviewCells({ result: RESULT }), [RESULT.red_flags.join('\n'), 0.8]);
   assert.deepEqual(reviewCells({ result: { ...RESULT, red_flags: [], average_years_per_job: null } }), ['None', '']);
   assert.match(reviewCells({ skipped: 'Old .doc format' })[0], /^Not reviewed: Old \.doc/);
+});
+
+test('the server reviews earlier rows and writes only the two new cells', async () => {
+  const { reviewExisting } = require('../lib/backfill');
+  const blank = () => Array(HEADERS.length - 2).fill(''); // older rows stop before the new columns
+  const old = blank();
+  old[HEADERS.indexOf('Name')] = 'Old Applicant';
+  old[HEADERS.indexOf('Position')] = 'Sales Associate';
+  old[HEADERS.indexOf('CV')] = '=HYPERLINK("https://drive.google.com/file/d/f1/view?usp=drivesdk","Open CV")';
+  const gone = [...old];
+  gone[HEADERS.indexOf('CV')] = '=HYPERLINK("https://drive.google.com/file/d/missing/view","Open CV")';
+  const written = [];
+  const sheet = {
+    readApplicants: async () => [old, gone],
+    getRequirements: async () => 'Diploma',
+    writeReview: async (row, cells) => written.push([row, cells]),
+  };
+  const storage = {
+    download: async (id) => {
+      if (id !== 'f1') throw new Error('File not found');
+      return { buffer: PDF, name: '2026-10-01_Old-Applicant.pdf' };
+    },
+  };
+  const client = fakeClient();
+  const quiet = { log() {}, error() {} };
+  const out = await reviewExisting({ analyzer: createAnalyzer(config, client), sheet, storage, log: quiet });
+  assert.deepEqual(out, { reviewed: 1, total: 2 });
+  assert.deepEqual(written, [[2, [RESULT.red_flags.join('\n'), 0.8]]]); // row 3 failed and stays blank
+  assert.match(client.calls[0].messages[0].content[1].text, /Diploma/);
+  assert.equal(loadConfig({}).reviewExisting, true);
+  assert.equal(loadConfig({ REVIEW_EXISTING: 'off' }).reviewExisting, false);
 });

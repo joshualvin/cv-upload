@@ -10,6 +10,7 @@ const { createApp } = require('./app');
 const { createAnalyzer } = require('./lib/analyzer');
 const { createSheet } = require('./lib/sheet');
 const { createProcessor } = require('./lib/processor');
+const { reviewExisting } = require('./lib/backfill');
 
 const config = loadConfig();
 let storage;
@@ -52,3 +53,11 @@ createApp(config, storage, { analyzer, sheet, processor }).listen(config.port, (
   console.log(`CV upload form:   ${base}/apply`);
   console.log(`Printable QR:     ${base}/qr`);
 });
+
+// Applications from before the Red flags column get reviewed too, one at a
+// time, a little after start-up so the first visitors are not kept waiting.
+if (config.reviewExisting && analyzer && sheet) {
+  setTimeout(() => {
+    reviewExisting({ analyzer, sheet, storage }).catch((err) => console.error(`[review-existing] ${err.message || err}`));
+  }, 15 * 1000).unref();
+}
