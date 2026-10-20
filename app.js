@@ -9,22 +9,16 @@ const QRCode = require('qrcode');
 
 const { createJobs } = require('./lib/jobs');
 const { rateLimit } = require('./lib/rateLimit');
+const { WAITING_FOR_AI, fileDetails, oneLine, contactFromCv } = require('./lib/details');
+const { buildRow } = require('./lib/sheet');
 const {
   OTHER_POSITION,
   ALLOWED_EXTENSIONS,
   OFFLINE_EXTENSIONS,
   detectFileType,
   validateFields,
-  normalizePhone,
   buildFileName,
 } = require('./lib/validate');
-
-// Drive appProperties allow at most 124 bytes per key + value.
-function fitBytes(key, value) {
-  let v = String(value || '');
-  while (Buffer.byteLength(key + v) > 124) v = v.slice(0, -1);
-  return v;
-}
 
 // Turn Google API errors into a short, actionable message.
 function describeError(err) {
@@ -233,30 +227,6 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
     limits: { fileSize: config.maxFileMb * 1024 * 1024, files: 1, fields: 10, fieldSize: 2000 },
   });
 
-  /** Drive description and properties for one application. */
-  function fileDetails(data, submittedAt, originalName, source) {
-    const description = [
-      `Name: ${data.name}`,
-      data.email && `Email: ${data.email}`,
-      data.phone && `Phone: ${data.phone}`,
-      data.position && `Position: ${data.position}`,
-      data.otherInterest && `Interested in: ${data.otherInterest}`,
-      `Source: ${data.source}`,
-      `Submitted: ${submittedAt.toISOString()}`,
-      `Original file: ${originalName}`,
-    ]
-      .filter(Boolean)
-      .join('\n');
-    const properties = {
-      name: fitBytes('name', data.name),
-      email: fitBytes('email', data.email),
-      phone: fitBytes('phone', data.phone),
-      position: fitBytes('position', data.position),
-      source,
-    };
-    return { description, properties };
-  }
-
   /** Save one application to Drive, answer, then queue the AI review and sheet row. */
   async function saveApplication(res, { file, type, data, source }) {
     const submittedAt = new Date();
@@ -317,12 +287,12 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
     app.get('/admin', staff, (req, res) => sendPage(res, 'admin.html'));
     // Staff only add the CV (file, scan or photo). It is saved at once under a
     // temporary name; the AI then reads name, email and phone from it, and the
-    // file is renamed and its sheet row written with those details.
+    // file is renamed and its sheet row written with those details. Without the
+    // AI (no ANTHROPIC_API_KEY) the row is written as "Waiting for AI", and the
+    // server that has the key completes it at its next start (lib/backfill.js).
     app.post('/admin/api/upload', staff, upload.single('cv'), async (req, res, next) => {
       try {
-        if (!analyzer || !processor) {
-          return res.status(503).json({ error: 'Pembacaan CV oleh AI belum aktif (perlu ANTHROPIC_API_KEY dan GOOGLE_SHEET_ID).' });
-        }
+        if (!sheet) return res.status(503).json({ error: 'Sheet belum diatur (GOOGLE_SHEET_ID).' });
         const errors = {};
         const type = checkFile(req.file, errors, OFFLINE_EXTENSIONS, 'Pilih file CV atau foto CV.');
         if (!['on', 'yes', 'true'].includes(String(req.body.consent || '').toLowerCase())) {
@@ -330,7 +300,6 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
         }
         if (Object.keys(errors).length) return res.status(400).json({ error: errors.cv || errors.consent, errors });
 
-        const oneLine = (value, max) => String(value || '').replace(/\s+/g, ' ').trim().slice(0, max);
         const chosen = oneLine(req.body.position, 100);
         const note = oneLine(req.body.note, 100);
         const data = {
@@ -345,14 +314,20 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
         const submittedAt = new Date();
         const stem = path.parse(file.originalname).name;
         const tempName = buildFileName({ name: `Offline ${stem}`, position: data.position }, type.ext, submittedAt);
+        const placeholder = { ...data, name: `(menunggu AI) ${stem}` };
         const saved = await storage.save({
           buffer: file.buffer,
           fileName: tempName,
           mimeType: type.mimeType,
-          ...fileDetails({ ...data, name: '(being read)' }, submittedAt, file.originalname, 'offline'),
+          ...fileDetails(placeholder, submittedAt, file.originalname, 'offline'),
           position: data.position,
         });
         console.log(`[staff] ${tempName} -> ${saved.id}`);
+
+        if (!analyzer || !processor) {
+          await sheet.append(buildRow({ submittedAt, data: placeholder, cvLink: saved.link }, null, WAITING_FOR_AI, config.timeZone));
+          return res.json({ ok: true, file: file.originalname, waiting: true });
+        }
         res.json({ ok: true, file: file.originalname });
 
         processor.enqueue({
@@ -363,12 +338,7 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
           data,
           cvLink: saved.link,
           fromCv: async (result) => {
-            const r = result || {};
-            const email = oneLine(r.candidate_email, 254).toLowerCase();
-            const phone = oneLine(r.candidate_phone, 30);
-            data.name = oneLine(r.candidate_name, 100) || `(nama tidak terbaca) ${stem}`;
-            data.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
-            data.phone = normalizePhone(phone) || phone;
+            Object.assign(data, contactFromCv(result, stem));
             const fileName = buildFileName(data, type.ext, submittedAt);
             await storage.rename(saved.id, { fileName, ...fileDetails(data, submittedAt, file.originalname, 'offline') });
           },

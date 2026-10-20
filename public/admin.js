@@ -19,6 +19,7 @@
   const ALLOWED = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
   let maxBytes = 10 * 1024 * 1024;
   let files = [];
+  let waiting = 0;
 
   window.siteConfig
     .then((cfg) => {
@@ -129,7 +130,8 @@
           res = JSON.parse(xhr.responseText);
         } catch (_) {}
         if (xhr.status >= 200 && xhr.status < 300 && res.ok) {
-          setState('✓ Tersimpan', 'ok');
+          setState(res.waiting ? '✓ Tersimpan · menunggu AI' : '✓ Tersimpan', 'ok');
+          if (res.waiting) waiting += 1;
           return resolve(true);
         }
         if (xhr.status === 401) setState('✗ Perlu masuk lagi; muat ulang halaman', 'fail');
@@ -156,6 +158,7 @@
     results.hidden = false;
     resultsNote.textContent = '';
     let saved = 0;
+    waiting = 0;
 
     for (const original of batch) {
       const setState = row(original.name);
@@ -176,7 +179,10 @@
       saved +
       ' dari ' +
       batch.length +
-      ' CV tersimpan. Nama, email, nomor WA/HP, dan penilaian AI muncul di sheet sekitar 1 menit per CV.';
+      ' CV tersimpan. ' +
+      (waiting
+        ? 'AI belum aktif di sini: nama, email, nomor WA/HP, dan penilaian diisi otomatis saat situs utama aktif kembali.'
+        : 'Nama, email, nomor WA/HP, dan penilaian AI muncul di sheet sekitar 1 menit per CV.');
     form.elements.consent.checked = false;
     fileInput.value = '';
     showFiles([]);

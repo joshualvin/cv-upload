@@ -436,3 +436,75 @@ test('staff page stays off without a long enough ADMIN_PASSWORD', async () => {
     }
   }
 });
+
+test('staff upload without the AI is saved as "Waiting for AI"', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cv-wait-test-'));
+  const cfg = loadConfig({ DRIVE_MODE: 'local', LOCAL_UPLOAD_DIR: dir, ADMIN_PASSWORD: 'staff-password-123' });
+  const sheet = createSheet(cfg);
+  const server = createApp(cfg, createStorage(cfg), { analyzer: null, sheet, processor: null }).listen(0);
+  await new Promise((r) => server.once('listening', r));
+  try {
+    const fd = new FormData();
+    fd.set('consent', 'yes');
+    fd.set('position', 'Admin Gudang');
+    fd.set('cv', new Blob([PDF]), 'CV Budi.pdf');
+    const res = await fetch(`http://127.0.0.1:${server.address().port}/admin/api/upload`, {
+      method: 'POST',
+      headers: { authorization: 'Basic ' + Buffer.from('x:staff-password-123').toString('base64') },
+      body: fd,
+    });
+    assert.deepEqual(await res.json(), { ok: true, file: 'CV Budi.pdf', waiting: true });
+    const [row] = fs.readFileSync(path.join(dir, 'applicants.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
+    assert.equal(row.Name, '(menunggu AI) CV Budi');
+    assert.equal(row['AI status'], 'Waiting for AI');
+    assert.equal(row.Source, 'Offline');
+    assert.equal(row.Position, 'Admin Gudang');
+    assert.equal(row['Red flags'], '');
+    assert.ok(fs.readdirSync(dir).some((f) => /_\d{4}-\d{2}-\d{2}_Offline-CV-Budi_Admin-Gudang\.pdf$/.test(f)));
+  } finally {
+    server.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the server completes "Waiting for AI" rows: applicant, review and file name', async () => {
+  const { reviewExisting } = require('../lib/backfill');
+  const cells = Array(HEADERS.length).fill('');
+  const set = (h, v) => (cells[HEADERS.indexOf(h)] = v);
+  set('Submitted', '2026-10-20 15:30');
+  set('Name', '(menunggu AI) CV Budi');
+  set('Position', 'Admin Gudang');
+  set('Source', 'Offline: walk-in');
+  set('AI status', 'Waiting for AI');
+  set('CV', '=HYPERLINK("https://drive.google.com/file/d/w1/view","Open CV")');
+  const updates = [];
+  const renames = [];
+  const sheet = {
+    readApplicants: async () => [cells],
+    getRequirements: async () => '',
+    writeReview: async () => assert.fail('a waiting row gets the whole review'),
+    updateRow: async (row, values, names) => updates.push({ row, values, names }),
+  };
+  const storage = {
+    download: async () => ({ buffer: PDF, name: '2026-10-20_Offline-CV-Budi_Admin-Gudang.pdf', description: 'Name: x\nOriginal file: CV Budi.pdf' }),
+    rename: async (id, details) => renames.push({ id, ...details }),
+  };
+  const out = await reviewExisting({ analyzer: createAnalyzer(config, fakeClient()), sheet, storage, log: { log() {}, error() {} } });
+  assert.deepEqual(out, { reviewed: 1, total: 1 });
+
+  const [{ row, values, names }] = updates;
+  const get = (h) => values[HEADERS.indexOf(h)];
+  assert.equal(row, 2);
+  assert.equal(get('Name'), 'Siti Rahma');
+  assert.equal(get('Email'), 'siti.rahma@example.com');
+  assert.equal(get('Phone'), "'+62 812-3456-7890");
+  assert.equal(get('Match score'), 85);
+  assert.match(get('AI status'), /Analysed by/);
+  assert.match(get('Red flags'), /Frequent job changes/);
+  for (const kept of ['Submitted', 'CV', 'Position', 'Source']) assert.ok(!names.includes(kept), kept);
+
+  assert.equal(renames[0].id, 'w1');
+  assert.equal(renames[0].fileName, '2026-10-20_Siti-Rahma_Admin-Gudang.pdf');
+  assert.match(renames[0].description, /Original file: CV Budi\.pdf/);
+  assert.match(renames[0].description, /Source: Offline: walk-in/);
+});
