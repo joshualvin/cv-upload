@@ -12,10 +12,9 @@
 require('dotenv').config({ quiet: true });
 
 const { normalizePhone } = require('../lib/validate');
-const { HEADERS } = require('../lib/sheet');
+const { columnLetter } = require('../lib/sheet');
 
 const TAB = 'Applicants';
-const COLUMN = String.fromCharCode(65 + HEADERS.indexOf('Phone')); // D
 
 /**
  * values = the Phone column from row 2 down, as the Sheets API returns it.
@@ -46,6 +45,11 @@ async function main() {
   const sheets = sheetsApi({ version: 'v4', auth: createGoogleAuth(config) });
   const spreadsheetId = config.sheetId;
 
+  // Columns can be in any order: find Phone by its header.
+  const head = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${TAB}!1:1` });
+  const at = ((head.data.values || [])[0] || []).indexOf('Phone');
+  if (at < 0) throw new Error(`No "Phone" column in row 1 of ${TAB}.`);
+  const COLUMN = columnLetter(at);
   const { data } = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${TAB}!${COLUMN}2:${COLUMN}` });
   const { updates, skipped } = planPhoneUpdates(data.values);
 

@@ -135,8 +135,10 @@ test('builds a row matching the headers', () => {
     'Frequent job changes: 4 jobs in 3 years (2023-2026), each under 1 year\nGap: Mar 2022 - Jan 2023, not explained'
   );
   assert.equal(row[HEADERS.indexOf('Average years per job')], 0.8);
-  // New columns are added at the end, so older rows keep their places.
-  assert.deepEqual(HEADERS.slice(-3), ['Other role interest', 'Red flags', 'Average years per job']);
+  // Every header gets exactly one value, and the readable order starts with who and the verdict.
+  assert.equal(new Set(HEADERS).size, HEADERS.length);
+  assert.ok(row.every((v) => v !== undefined));
+  assert.deepEqual(HEADERS.slice(0, 7), ['Submitted', 'Name', 'Position', 'Other role interest', 'Match score', 'Match reason', 'Red flags']);
 });
 
 test('upload -> AI -> sheet row, end to end in local mode', async () => {
@@ -317,4 +319,33 @@ test('the server reviews earlier rows and writes only the two new cells', async 
   assert.match(client.calls[0].messages[0].content[1].text, /Diploma/);
   assert.equal(loadConfig({}).reviewExisting, true);
   assert.equal(loadConfig({ REVIEW_EXISTING: 'off' }).reviewExisting, false);
+});
+
+test('rows follow the sheet\'s own column order, matched by header name', () => {
+  const { arrangeRow, rowsByHeaders, columnLetter } = require('../lib/sheet');
+  const row = HEADERS.map((h) => `v:${h}`);
+  // A sheet with its own order, an extra column of the recruiter's, and an old header missing.
+  const sheetHeader = ['Name', 'Notes', 'Submitted', 'Phone', ...HEADERS.filter((h) => !['Name', 'Submitted', 'Phone', 'Skills'].includes(h))];
+  const arranged = arrangeRow(row, sheetHeader);
+  assert.deepEqual(arranged.slice(0, 4), ['v:Name', '', 'v:Submitted', 'v:Phone']);
+  assert.equal(arranged.length, sheetHeader.length);
+  const [back] = rowsByHeaders([arranged], sheetHeader);
+  assert.equal(back[HEADERS.indexOf('Phone')], 'v:Phone');
+  assert.equal(back[HEADERS.indexOf('Skills')], ''); // not in this sheet
+  assert.deepEqual([columnLetter(0), columnLetter(25), columnLetter(26), columnLetter(51)], ['A', 'Z', 'AA', 'AZ']);
+});
+
+test('reorder-columns moves columns left to right into the readable order', () => {
+  const { planMoves } = require('../scripts/reorder-columns');
+  const old = ['Submitted', 'Name', 'Email', 'Phone', 'Position', 'Notes', ...HEADERS.filter((h) => !['Submitted', 'Name', 'Email', 'Phone', 'Position'].includes(h))];
+  const { moves, result } = planMoves(old);
+  assert.deepEqual(result, [...HEADERS, 'Notes']);
+  // Replaying the moves (each one from a column at or right of its target) gives the same order.
+  const replay = [...old];
+  for (const { from, to } of moves) {
+    assert.ok(from > to);
+    replay.splice(to, 0, ...replay.splice(from, 1));
+  }
+  assert.deepEqual(replay, result);
+  assert.deepEqual(planMoves(HEADERS).moves, []);
 });
