@@ -90,6 +90,9 @@ test('sends a PDF as a document with schema, effort and fallbacks', async () => 
   assert.match(req.system, /candidate_birth_date and candidate_religion only/);
   assert.match(req.system, /must not affect the score, the summary or the red flags/);
   assert.match(req.system, /only when the CV states them outright\. Never infer them/);
+  // Age may be estimated from school years only, for the records, never for the score.
+  assert.match(req.system, /estimate the birth year from the education timeline only/);
+  assert.match(req.system, /Never estimate from photos, names, email addresses/);
   const schema = req.output_config.format.schema;
   assert.ok(schema.required.includes('red_flags') && schema.required.includes('average_years_per_job'));
 });
@@ -613,4 +616,46 @@ test('"Review again" redoes the AI columns and keeps the applicant\'s details', 
   assert.match(values[HEADERS.indexOf('Red flags')], /Frequent job changes/);
   assert.match(values[HEADERS.indexOf('AI status')], /Analysed by/);
   for (const h of ['Red flags', 'AI status', 'Summary', 'Match score', 'Religion']) assert.ok(names.includes(h), h);
+});
+
+test('phone, email and social media cells get clickable links', () => {
+  const { contactLinks, linkedCell } = require('../lib/sheet');
+  assert.deepEqual(contactLinks('Phone', '+62 812-3517-467'), [{ start: 0, end: 16, uri: 'https://wa.me/628123517467' }]);
+  assert.deepEqual(contactLinks('Phone', "'0812 3456 7890"), [{ start: 0, end: 14, uri: 'https://wa.me/6281234567890' }]);
+  assert.equal(contactLinks('Phone', '021 555 1234')[0].uri, 'tel:0215551234'); // landline: no WhatsApp
+  assert.deepEqual(contactLinks('Email', 'a@b.co'), [{ start: 0, end: 6, uri: 'mailto:a@b.co' }]);
+  assert.deepEqual(contactLinks('Email', 'not an email'), []);
+  const social = 'Instagram: @vanezaaureli_ (job fair)\ninstagram.com/vanezaaurel_fwd (CV)\nTikTok @budi.x\nhttps://www.linkedin.com/in/budi/';
+  assert.deepEqual(
+    contactLinks('Social media', social).map((l) => [social.slice(l.start, l.end), l.uri]),
+    [
+      ['@vanezaaureli_', 'https://www.instagram.com/vanezaaureli_'],
+      ['instagram.com/vanezaaurel_fwd', 'https://instagram.com/vanezaaurel_fwd'],
+      ['@budi.x', 'https://www.tiktok.com/@budi.x'],
+      ['https://www.linkedin.com/in/budi/', 'https://www.linkedin.com/in/budi/'],
+    ]
+  );
+  // Rich text: plain before and after each link, the text itself unchanged.
+  const text = 'Instagram: @abc (x)';
+  const cellValue = linkedCell(text, contactLinks('Social media', text));
+  assert.equal(cellValue.userEnteredValue.stringValue, text);
+  assert.deepEqual(cellValue.textFormatRuns, [
+    { startIndex: 0, format: {} },
+    { startIndex: 11, format: { link: { uri: 'https://www.instagram.com/abc' } } },
+    { startIndex: 15, format: {} },
+  ]);
+});
+
+test('age: exact from the date of birth, else estimated from school years', () => {
+  const { ageAt } = require('../lib/sheet');
+  const applied = new Date('2026-10-20T12:00:00Z');
+  assert.deepEqual(ageAt({ candidate_birth_date: '1973-02-15' }, applied), { age: 53, basis: 'Date of birth' });
+  assert.deepEqual(ageAt({ candidate_birth_date: '1973-12-15' }, applied), { age: 52, basis: 'Date of birth' }); // birthday not yet
+  assert.deepEqual(ageAt({ estimated_birth_year: 2001, estimated_birth_year_basis: 'SMK 2016-2019 -> born about 2001' }, applied), {
+    age: 25,
+    basis: 'Estimated: SMK 2016-2019 -> born about 2001',
+  });
+  assert.equal(ageAt({ candidate_birth_date: '1973-02-15', estimated_birth_year: 1990 }, applied).age, 53); // a stated date wins
+  assert.equal(ageAt({}, applied), null);
+  assert.equal(ageAt({ estimated_birth_year: 1850 }, applied), null);
 });
