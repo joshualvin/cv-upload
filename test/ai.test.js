@@ -516,3 +516,45 @@ test('the server completes "Waiting for AI" rows: applicant, review and file nam
   assert.match(renames[0].description, /Original file: CV Budi\.pdf/);
   assert.match(renames[0].description, /Source: Offline: walk-in/);
 });
+
+test('completing a waiting row keeps filled cells the AI found nothing for', async () => {
+  const { reviewExisting } = require('../lib/backfill');
+  const cells = Array(HEADERS.length).fill('');
+  const set = (h, v) => (cells[HEADERS.indexOf(h)] = v);
+  set('Name', 'R. Bobby Surya Bernanda'); // filled in by hand
+  set('Email', 'bobby@example.com'); // from a registration list
+  set('Date of birth', '1973-02-15');
+  set('Position', 'Accounting');
+  set('Source', 'Offline');
+  set('AI status', 'Waiting for AI');
+  set('CV', '=HYPERLINK("https://drive.google.com/file/d/w2/view","Open CV")');
+  const updates = [];
+  const sheet = {
+    readApplicants: async () => [cells],
+    getRequirements: async () => '',
+    updateRow: async (row, values, names) => updates.push({ values, names }),
+  };
+  const renames = [];
+  const storage = {
+    download: async () => ({ buffer: PDF, name: '2026-10-20_x.pdf', description: '' }),
+    rename: async (id, details) => renames.push(details),
+  };
+  // The AI reads no name, email or date of birth from this CV.
+  const client = fakeClient({
+    content: [{ type: 'text', text: JSON.stringify({ ...RESULT, candidate_name: '', candidate_email: '', candidate_birth_date: '' }) }],
+  });
+  await reviewExisting({ analyzer: createAnalyzer(config, client), sheet, storage, log: { log() {}, error() {} } });
+  const [{ values, names }] = updates;
+  // Kept cells are either left out or written back unchanged; never blanked.
+  const kept = { Name: 'R. Bobby Surya Bernanda', Email: 'bobby@example.com', 'Date of birth': '1973-02-15' };
+  for (const [h, v] of Object.entries(kept)) {
+    if (names.includes(h)) assert.equal(values[HEADERS.indexOf(h)], v, h);
+  }
+  assert.ok(!names.includes('Date of birth'));
+  assert.ok(names.includes('Phone')); // the AI did read a phone number
+  assert.ok(names.includes('Match score'));
+  assert.equal(values[HEADERS.indexOf('Match score')], 85);
+  // The Drive file is named after the kept name, with the kept email in its details.
+  assert.equal(renames[0].fileName, '2026-10-20_R-Bobby-Surya-Bernanda_Accounting.pdf');
+  assert.match(renames[0].description, /Email: bobby@example\.com/);
+});
