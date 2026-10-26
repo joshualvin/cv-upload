@@ -431,7 +431,12 @@ form button[type="submit"] { width: 100%; padding: 15px 22px; }
 .poster h2 { font-size: 2rem; margin: 8px 0; letter-spacing: -0.035em; }
 .poster .muted { color: #62656a; }
 .poster img { width: min(320px, 100%); height: auto; margin: 16px auto; display: block; }
-.poster .eyebrow { color: #c2622d; }
+.poster-heading {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
 .steps { font-weight: 600; }
 .url { font-family: var(--mono); font-size: .8rem; color: #62656a; word-break: break-all; }
 

@@ -43,7 +43,6 @@
     const details = el('details');
     if (location.hash === '#' + job.id) details.open = true;
 
-
     const summary = el('summary');
     summary.appendChild(el('span', 'job-title', job.title));
     const meta = el('span', 'job-meta');
