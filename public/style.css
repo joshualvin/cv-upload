@@ -58,7 +58,13 @@
   }
 }
 
-* { box-sizing: border-box; }
+/* Browser surfaces: theme the parts the developer didn't draw */
+::selection { background: var(--accent-soft); color: var(--text); }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+input, textarea { caret-color: var(--accent); }
 
 body {
   margin: 0;
@@ -70,7 +76,14 @@ body {
   font: 16px/1.6 var(--font);
   -webkit-font-smoothing: antialiased;
   padding: 0 16px 24px;
+  animation: page-in .4s ease-out;
 }
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 
 .mono { font-family: var(--mono); }
 
@@ -96,7 +109,7 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
 .mark { flex: none; display: block; width: 40px; height: 40px; }
 .brand-text { display: grid; line-height: 1.25; min-width: 0; }
 .brand-text strong { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.brand-text small { font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.brand-text small { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .site-header .button { padding: 10px 18px; flex: none; }
 .narrow-only { display: none; }
 @media (max-width: 480px) {
@@ -180,9 +193,12 @@ input::placeholder { color: var(--muted); opacity: .8; }
   cursor: pointer;
   font-weight: 600;
   word-break: break-word;
-  transition: border-color .15s, background-color .15s;
+  transition: border-color .15s, background-color .15s, transform .1s ease-out;
 }
+.dropzone:hover { border-color: var(--muted); }
 .dropzone.drag, .dropzone.has-file { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone:active { transform: scale(0.99); }
+
 .dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .dropzone small { font-family: var(--mono); font-size: .7rem; letter-spacing: .04em; font-weight: 400; }
 
@@ -225,7 +241,12 @@ form button[type="submit"] { width: 100%; padding: 15px 22px; }
 .progress { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
 .bar { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
 
-#success { text-align: center; padding: 16px 0; }
+#success { text-align: center; padding: 16px 0; animation: success-in .5s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes success-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 #success p { color: var(--muted); }
 .tick {
   width: 64px; height: 64px; margin: 0 auto 14px;
@@ -287,10 +308,17 @@ form button[type="submit"] { width: 100%; padding: 15px 22px; }
   border-radius: var(--r-md);
   box-shadow: var(--shadow);
   scroll-margin-top: 90px;
-  transition: border-color .15s;
+  transition: border-color .15s, transform .2s ease-out, box-shadow .2s ease-out;
+  animation: job-in .4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.job:hover { border-color: color-mix(in srgb, var(--text) 25%, var(--border)); }
-.job:has(details[open]) { border-color: var(--text); }
+@keyframes job-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.job:hover { border-color: color-mix(in srgb, var(--text) 25%, var(--border)); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(15, 23, 20, .08); }
+.job:has(details[open]) { border-color: var(--text); transform: none; }
+
+
 .job summary {
   list-style: none;
   cursor: pointer;
@@ -316,16 +344,17 @@ form button[type="submit"] { width: 100%; padding: 15px 22px; }
   font-size: 1.1rem;
   line-height: 1;
   color: var(--text);
-  transition: transform .2s, background-color .15s;
+  transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1), background-color .15s;
 }
 .job details[open] summary::after { transform: rotate(45deg); background: var(--text); color: var(--bg); border-color: var(--text); }
+
 .job summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .job-title { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.02em; }
 .job-meta { display: flex; flex-wrap: wrap; gap: 6px; }
 .job-meta:empty { display: none; }
 .tag {
   font-family: var(--mono);
-  font-size: .66rem;
+  font-size: .7rem;
   letter-spacing: .06em;
   text-transform: uppercase;
   padding: 3px 10px;
@@ -430,3 +459,12 @@ form button[type="submit"] { width: 100%; padding: 15px 22px; }
 .queue .state { color: var(--muted); text-align: right; }
 .queue .state.ok { color: var(--ok); }
 .queue .state.fail { color: var(--error); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

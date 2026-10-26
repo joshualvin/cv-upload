@@ -36,11 +36,13 @@
     return 'Diposting ' + d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  function card(job) {
+  function card(job, index) {
     const li = el('li', 'job');
     li.id = job.id;
+    li.style.animationDelay = `${index * 40}ms`;
     const details = el('details');
     if (location.hash === '#' + job.id) details.open = true;
+
 
     const summary = el('summary');
     summary.appendChild(el('span', 'job-title', job.title));
@@ -93,7 +95,8 @@
         (!department || j.department === department) &&
         (!q || [j.title, j.department, j.location, j.type, j.summary].join(' ').toLowerCase().includes(q))
     );
-    listEl.replaceChildren(...shown.map(card));
+    listEl.replaceChildren(...shown.map((job, i) => card(job, i)));
+
     emptyEl.hidden = shown.length > 0 || jobs.length === 0;
     if (jobs.length === 0) countEl.textContent = 'Saat ini belum ada lowongan yang dibuka.';
     else countEl.textContent = shown.length + ' lowongan tersedia';
@@ -116,6 +119,6 @@
       }
     })
     .catch(() => {
-      countEl.textContent = 'Lowongan tidak dapat dimuat. Silakan muat ulang halaman.';
+      countEl.textContent = 'Lowongan gagal dimuat. Muat ulang halaman.';
     });
 })();

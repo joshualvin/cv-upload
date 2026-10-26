@@ -101,7 +101,7 @@
 
   function checkPhone() {
     const value = form.elements.phone.value.trim();
-    if (!value) return 'Silakan isi nomor WA/HP Anda.';
+    if (!value) return 'Nomor WA/HP wajib diisi.';
     if (!phoneDigits(value)) return 'Gunakan nomor HP Indonesia, misalnya 0812-3456-7890.';
     return '';
   }
@@ -116,7 +116,7 @@
 
   function checkFile() {
     const file = fileInput.files[0];
-    if (!file) return 'Silakan pilih file CV Anda.';
+    if (!file) return 'Pilih file CV Anda.';
     const ext = file.name.split('.').pop().toLowerCase();
     if (!allowed.includes(ext)) return 'CV harus berupa file ' + allowed.join(', ').toUpperCase() + '.';
     if (file.size > maxBytes) return 'Ukuran file terlalu besar. Maksimal ' + maxBytes / 1024 / 1024 + ' MB.';
@@ -155,14 +155,14 @@
     let ok = true;
     const name = form.elements.name.value.trim();
     const email = form.elements.email.value.trim();
-    if (!name) (ok = false), setError('name', 'Silakan isi nama lengkap Anda.');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) (ok = false), setError('email', 'Silakan isi alamat email yang valid.');
+    if (!name) (ok = false), setError('name', 'Nama lengkap wajib diisi.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) (ok = false), setError('email', 'Alamat email tidak valid.');
     const phoneErr = checkPhone();
     if (phoneErr) (ok = false), setError('phone', phoneErr);
-    if (dropdown && !dropdown.value) (ok = false), setError('position', 'Silakan pilih posisi, atau Lainnya.');
+    if (dropdown && !dropdown.value) (ok = false), setError('position', 'Pilih posisi, atau Lainnya.');
     const fileErr = checkFile();
     if (fileErr) (ok = false), setError('cv', fileErr);
-    if (!form.elements.consent.checked) (ok = false), setError('consent', 'Silakan centang persetujuan di atas.');
+    if (!form.elements.consent.checked) (ok = false), setError('consent', 'Centang persetujuan untuk melanjutkan.');
     return ok;
   }
 
@@ -204,7 +204,7 @@
         return;
       }
       if (res.errors) Object.keys(res.errors).forEach((k) => setError(k, res.errors[k]));
-      formError.textContent = res.error || 'Pengiriman gagal. Silakan coba lagi.';
+      formError.textContent = res.error || 'Pengiriman gagal. Coba lagi.';
     };
     xhr.onerror = () => {
       busy(false);
