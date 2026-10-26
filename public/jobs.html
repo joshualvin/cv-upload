@@ -27,7 +27,6 @@
   </header>
   <main class="board">
     <section class="hero">
-      <p class="kicker mono"><span class="dot" aria-hidden="true"></span>Kami sedang merekrut</p>
       <h1>Bangun karir Anda <span class="accent">bersama kami.</span></h1>
       <p>Lihat lowongan yang tersedia dan lamar hanya dalam beberapa menit. Cukup siapkan CV Anda.</p>
       <a class="button" href="#openings">Lihat lowongan <span aria-hidden="true">→</span></a>
@@ -41,10 +40,11 @@
       <div class="chips" id="filters" role="group" aria-label="Saring berdasarkan departemen"></div>
     </div>
 
-    <p class="muted count" id="count" aria-live="polite">Memuat lowongan…</p>
-    <ul class="jobs" id="jobs"></ul>
-
-    <p class="empty" id="empty" hidden>Tidak ada lowongan yang sesuai dengan pencarian Anda.</p>
+    <section class="openings" aria-labelledby="count">
+      <p class="muted count" id="count" aria-live="polite">Memuat lowongan…</p>
+      <ul class="jobs" id="jobs"></ul>
+      <p class="empty" id="empty" hidden>Tidak ada lowongan yang sesuai dengan pencarian Anda.</p>
+    </section>
 
     <section class="general">
       <h2>Belum menemukan posisi yang cocok?</h2>

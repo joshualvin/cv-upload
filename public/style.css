@@ -86,7 +86,7 @@ h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
   justify-content: space-between;
   gap: 12px;
   margin: 0 -16px 16px;
-  padding: 12px 16px;
+  padding: 12px max(16px, calc((100% - 860px) / 2 + 16px)); /* lines up with the 860px page column */
   background: color-mix(in srgb, var(--bg) 85%, transparent);
   backdrop-filter: saturate(1.2) blur(12px);
   -webkit-backdrop-filter: saturate(1.2) blur(12px);
@@ -142,6 +142,8 @@ h2 { margin: 0 0 8px; }
 .card header { margin-bottom: 22px; }
 
 form { display: grid; gap: 18px; }
+/* Group breaks: who you are / what you apply for / consent and send. */
+#position-field, #cv-form .check { margin-top: 10px; }
 label, .file-field { display: grid; gap: 6px; font-weight: 500; }
 .label-text { font-weight: 500; font-size: .95rem; }
 .req { color: var(--accent); }
@@ -252,23 +254,13 @@ form button[type="submit"] { width: 100%; padding: 15px 22px; }
   overflow: hidden;
   background-image: radial-gradient(120% 90% at 100% 100%, rgba(194, 98, 45, .28), transparent 55%);
 }
-.kicker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: .7rem;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--dark-muted);
-}
-.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .hero h1 { font-size: clamp(2.1rem, 6.5vw, 3.4rem); line-height: 1.02; letter-spacing: -0.045em; margin: 0; max-width: 14ch; }
 .hero .accent { color: var(--accent); white-space: nowrap; }
 .hero p { margin: 0; max-width: 56ch; color: var(--dark-muted); font-size: 1.05rem; }
 .hero .button { margin-top: 6px; }
 
-.toolbar { display: grid; gap: 12px; margin-top: 12px; scroll-margin-top: 90px; }
+.toolbar { display: grid; gap: 12px; margin-top: 4px; scroll-margin-top: 90px; }
+.openings { display: grid; gap: 10px; margin-top: 4px; }
 .search input { border-radius: 999px !important; padding-left: 20px !important; background: var(--surface) !important; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chips:empty { display: none; }
@@ -373,9 +365,22 @@ form button[type="submit"] { width: 100%; padding: 15px 22px; }
 }
 .general h2 { font-size: 1.3rem; margin: 0; }
 
+/* Phones: a tighter hero so the first opening is on screen, filter chips in
+   one row that scrolls sideways, and the form without its card frame so the
+   fields get the full width. */
+@media (max-width: 480px) {
+  .hero { padding: 26px 22px 24px; gap: 12px; }
+  .hero p { font-size: 1rem; }
+  .hero .button { margin-top: 2px; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 0 16px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; }
+  .card { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 4px 0 0; }
+}
+
 @media (min-width: 720px) {
   body { padding: 0 24px 32px; }
-  .site-header { margin: 0 -24px 24px; padding: 14px 24px; }
+  .site-header { margin: 0 -24px 24px; padding: 14px max(24px, calc((100% - 860px) / 2 + 24px)); }
   .card { padding: 36px 32px; }
 }
 

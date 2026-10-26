@@ -68,7 +68,6 @@
     .then((cfg) => {
       maxBytes = cfg.maxFileMb * 1024 * 1024;
       allowed = cfg.allowedExtensions;
-      document.getElementById('company').textContent = cfg.companyName + ' · Karir';
       document.getElementById('consent-text').textContent =
         'Saya setuju ' + cfg.companyName + ' menyimpan CV dan data kontak saya untuk keperluan rekrutmen.';
       fileHint.textContent = allowed.join(', ').toUpperCase() + ' · maks ' + cfg.maxFileMb + ' MB';
