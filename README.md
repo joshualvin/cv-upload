@@ -122,6 +122,17 @@ For CVs handed in on paper or in person, open **`/admin`** (for example `https:/
 
 Upload one or several CVs at once: PDF, DOC, DOCX, or a **scan or phone photo** (JPG/PNG; photos are shrunk in the browser first). Optionally choose the position and a note such as "walk-in di gudang", tick that the applicant agreed, and upload. Nothing else needs typing: the AI reads the applicant's **name, email and WA/HP number** from the CV, the file in Drive is renamed to the usual `date_Name_Position` format, and the sheet row is written with the same review as online applications, about a minute per CV. To have the AI review a row again (for example after its instructions changed), set its **AI status** cell to `Review again`; the server redoes the review at its next start (a restart or deploy) and rewrites only the AI's own columns, keeping the applicant's name, contact details, social media, position and source. **Phone**, **Email** and **Social media** are clickable: a mobile number opens a WhatsApp chat (`wa.me`), other numbers a phone call, the email a new message, and each handle or profile link its page (`@handle` = Instagram unless the line says TikTok or X); the text stays plain, with rich-text links on it. **Social media** lists the handle the applicant gave on the form (optional field *Instagram / LinkedIn*) and any profile links the CV lists, one per line; nothing is searched for or guessed. If you use it for a background check, keep it job-related and look only at public posts, check every shortlisted candidate the same way, and note what you checked: profiles show things a hiring decision must not rest on (religion, ethnicity, family, health; UU PDP and UU 13/2003). **Age** is the age on the day they applied: exact when the CV gives a date of birth, otherwise estimated from school years (finishing SMA/SMK ≈ 18, starting a diploma or S1 ≈ 18, finishing S1 ≈ 22), never from photos, names or email addresses; **Age basis** says which, e.g. "Estimated: SMK 2016-2019 -> born about 2001". Use it to filter for a position's age limit; an estimate can be 1–2 years off, so check the KTP before turning someone down near the limit, and apply a limit the same way to every applicant for that position. Age does not affect the score or red flags. **Date of birth** and **Religion** are copied from the CV only when it states them (never guessed), for your records only: the AI is told not to let them affect the score, summary or red flags. Hiring decisions must not be based on religion (UU 13/2003, articles 5–6). The **Source** column says `Online` for the public form and `Offline` (with the note) for this page. Without `ANTHROPIC_API_KEY` (for example when running the app on your own computer while the host is down) the page still works: each CV is saved and its row says **Waiting for AI** with a placeholder name, and the next start of a server that has the key reads those CVs, fills in name, email, WA/HP and the review, and renames the files. Needs `GOOGLE_SHEET_ID`. After 10 wrong passwords from one address the page refuses for 15 minutes.
 
+## Link with the HR system (WAU-HR)
+
+Set `HR_API_TOKEN` (at least 24 characters; make one with `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"`) and put the same value in WAU-HR's `config.php` as `career_token`, with `career_url` set to this site's address. The HR system on the office network then calls `/hr-api` with `Authorization: Bearer <token>`:
+
+- `GET /hr-api/positions`: every row of the Positions tab, open or not.
+- `PUT /hr-api/positions` with `{ "positions": [...] }`: replaces the rows of the Positions tab. WAU-HR imports any position it doesn't have first, so after the first sync, edit openings in WAU-HR; changes made only in the sheet would be imported again as new jobs only if their title is new.
+- `GET /hr-api/applicants`: the Applicants tab, each with a stable `id` (the CV's Drive file ID) and the AI fields.
+- `GET /hr-api/cv/:id`: one applicant's CV. Only files listed in the Applicants tab can be fetched.
+
+Without the token the API is off. After 10 wrong tokens from one address it refuses for 15 minutes. It needs `GOOGLE_SHEET_ID`.
+
 ## Configuration
 
 | Variable | Default | Description |
@@ -140,6 +151,7 @@ Upload one or several CVs at once: PDF, DOC, DOCX, or a **scan or phone photo** 
 | `ANTHROPIC_WORKSPACE_ID` | – | Needed when the key is not scoped to a workspace (error "must include the anthropic-workspace-id header"); the workspace's ID from the Claude Console |
 | `AI_MODEL` | `claude-opus-5-5` | Claude model used for the review |
 | `ADMIN_PASSWORD` | – | Turns on the staff page `/admin` for offline applications (at least 8 characters) |
+| `HR_API_TOKEN` | – | Turns on `/hr-api` for the HR system (WAU-HR) to sync openings and applicants (at least 24 characters) |
 | `REVIEW_EXISTING` | `on` | After start-up, review earlier applications whose **Red flags** cell is empty (about $0.05 each); `off` to skip |
 | `GOOGLE_SHEET_ID` | – | Sheet that receives one row per applicant |
 | `POSITIONS` | – | Dropdown options when there's no Positions tab, comma-separated |

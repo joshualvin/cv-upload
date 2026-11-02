@@ -8,6 +8,7 @@ const multer = require('multer');
 const QRCode = require('qrcode');
 
 const { createJobs } = require('./lib/jobs');
+const { createHrApi } = require('./lib/hrApi');
 const { rateLimit } = require('./lib/rateLimit');
 const { WAITING_FOR_AI, fileDetails, oneLine, contactFromCv } = require('./lib/details');
 const { buildRow } = require('./lib/sheet');
@@ -354,6 +355,13 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
     );
   }
 
+  // The HR system (WAU-HR) keeps the openings here in step and fetches applicants.
+  if (config.hrApiToken.length >= 24) {
+    app.use('/hr-api', createHrApi({ token: config.hrApiToken, sheet, storage }));
+  } else if (config.hrApiToken) {
+    console.warn('HR_API_TOKEN is shorter than 24 characters; the HR API stays off.');
+  }
+
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
@@ -364,6 +372,7 @@ function createApp(config, storage, { analyzer = null, sheet = null, processor =
       return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: message });
     }
     console.error('[error]', describeError(err));
+    if (req.path.startsWith('/hr-api/')) return res.status(502).json({ error: describeError(err) });
     res.status(500).json({ error: 'Maaf, terjadi kesalahan saat menyimpan CV Anda. Silakan coba lagi sebentar lagi.' });
   });
 
